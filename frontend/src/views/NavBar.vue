@@ -1,26 +1,29 @@
 <template>
   <v-app-bar v-if="anchoPantalla() > 700" color="transparent" height="100" scroll-behavior="hide" elevation="0"
     class="navbar-blur">
-    <v-container class="d-flex justify-center">
+    <v-card class="d-flex justify-center ms-5" elevation="5" >
+      <v-card-title class="d-flex text-h5 mt-2">
+        MODELPRO
+      </v-card-title>
       <router-link to="/generar" class="nav-link">
-        <v-btn text color="black" class="text-h5 nav-btn">Generador PDF</v-btn>
+        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Generador PDF</v-btn>
       </router-link>
       <router-link to="/perfil" class="nav-link">
-        <v-btn text color="black" class="text-h5 nav-btn">Perfil Producto PDF</v-btn>
+        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Perfil Producto PDF</v-btn>
       </router-link>
       <router-link to="/moldes" class="nav-link">
-        <v-btn text color="black" class="text-h5 nav-btn">Moldes</v-btn>
+        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Moldes</v-btn>
       </router-link>
       <router-link to="/perfil_tipo" class="nav-link">
-        <v-btn text color="black" class="text-h5 nav-btn">Perfil tipografía</v-btn>
+        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Perfil tipografía</v-btn>
       </router-link>
       <router-link to="/tallas" class="nav-link">
-        <v-btn text color="black" class="text-h5 nav-btn">Tallas</v-btn>
+        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Tallas</v-btn>
       </router-link>
       <router-link to="/config" class="nav-link">
-        <v-btn text color="black" class="text-h5 nav-btn">Config</v-btn>
+        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Config</v-btn>
       </router-link>
-    </v-container>
+    </v-card>
   </v-app-bar>
 
 
