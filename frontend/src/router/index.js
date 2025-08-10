@@ -7,6 +7,11 @@ const routes = [
     component: () => import('../views/Home.vue'),
   },
   {
+    path: '/clientes',
+    name: 'clientes',
+    component: () => import('../views/Secciones/Clientes.vue'),
+  },
+  {
     path: '/generar',
     name: 'generar',
     component: () => import('../views/Secciones/GenerarPDF.vue'),

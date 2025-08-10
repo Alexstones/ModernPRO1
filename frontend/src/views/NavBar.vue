@@ -13,6 +13,10 @@
       
       <v-divider vertical class="mx-4" />
 
+      
+      <router-link to="/Clientes" class="nav-link">
+        <v-btn text class="nav-btn">Clientes</v-btn>
+      </router-link>
       <router-link to="/generar" class="nav-link">
         <v-btn text class="nav-btn">Generador PDF</v-btn>
       </router-link>
