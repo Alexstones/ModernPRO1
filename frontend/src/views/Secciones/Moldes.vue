@@ -51,13 +51,21 @@
 
     <!-- Botones -->
     <div class="flex gap-4 mb-8">
-      <button @click="addMolde" class="boton-guardar">Guardar Moldes</button>
+      <button @click="addMolde" class="boton-guardar" :disabled="store.cargando">
+        {{ store.cargando ? 'Guardando...' : 'Guardar Moldes' }}
+      </button>
       <button @click="limpiarCampos" class="boton-limpiar">Limpiar Campos</button>
     </div>
 
     <!-- Tabla -->
     <div class="bg-white rounded-xl border-2 border-gray-200 overflow-hidden shadow-lg">
-      <h2 class="text-xl font-bold p-4 bg-gray-100 border-b text-gray-900">Moldes Registrados</h2>
+      <h2 class="text-xl font-bold p-4 bg-gray-100 border-b text-gray-900">
+        Moldes Registrados <span class="text-gray-500 font-normal">({{ store.cantidad }})</span>
+      </h2>
+
+      <div class="px-4 pb-2" v-if="store.error">
+        <div class="text-red-600">{{ store.error }}</div>
+      </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-left">
@@ -77,47 +85,52 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-if="moldes.length === 0">
+            <tr v-if="store.moldes.length === 0 && !store.cargando">
               <td colspan="8" class="text-center text-gray-500 py-6">
-                No hay moldes registrados. Sube tu primer conjunto!
+                No hay moldes registrados. ¡Sube tu primer conjunto!
               </td>
             </tr>
-            <tr v-for="(item, index) in moldes" :key="index" class="hover:bg-gray-50">
+
+            <tr v-for="item in store.moldes" :key="item.id" class="hover:bg-gray-50">
               <td class="px-6 py-4 font-medium">{{ item.nombre }}</td>
 
               <td class="px-6 py-4">
-                <a v-if="item.camiseta_izq" :href="item.camiseta_izq.url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
+                <a v-if="item.camiseta_izq_url" :href="item.camiseta_izq_url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
                 <span v-else class="text-gray-400 italic">-</span>
               </td>
 
               <td class="px-6 py-4">
-                <a v-if="item.camiseta_der" :href="item.camiseta_der.url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
+                <a v-if="item.camiseta_der_url" :href="item.camiseta_der_url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
                 <span v-else class="text-gray-400 italic">-</span>
               </td>
 
               <td class="px-6 py-4">
-                <a v-if="item.short_izq" :href="item.short_izq.url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
+                <a v-if="item.short_izq_url" :href="item.short_izq_url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
                 <span v-else class="text-gray-400 italic">-</span>
               </td>
 
               <td class="px-6 py-4">
-                <a v-if="item.short_der" :href="item.short_der.url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
+                <a v-if="item.short_der_url" :href="item.short_der_url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
                 <span v-else class="text-gray-400 italic">-</span>
               </td>
 
               <td class="px-6 py-4">
-                <a v-if="item.manga_izq" :href="item.manga_izq.url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
+                <a v-if="item.manga_izq_url" :href="item.manga_izq_url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
                 <span v-else class="text-gray-400 italic">-</span>
               </td>
 
               <td class="px-6 py-4">
-                <a v-if="item.manga_der" :href="item.manga_der.url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
+                <a v-if="item.manga_der_url" :href="item.manga_der_url" target="_blank" class="text-blue-600 hover:underline">Ver</a>
                 <span v-else class="text-gray-400 italic">-</span>
               </td>
 
               <td class="px-6 py-4">
-                <button @click="eliminarMolde(index)" class="text-red-600 hover:text-red-800">Eliminar</button>
+                <button @click="onEliminar(item.id)" class="text-red-600 hover:text-red-800">Eliminar</button>
               </td>
+            </tr>
+
+            <tr v-if="store.cargando">
+              <td colspan="8" class="text-center text-gray-500 py-4">Cargando…</td>
             </tr>
           </tbody>
         </table>
@@ -127,7 +140,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useMoldesStore } from '@/stores/moldes'
 
 // Campos definidos
 const camposArchivo = [
@@ -139,15 +153,21 @@ const camposArchivo = [
   { key: 'manga_der', label: 'Molde Manga Derecha' }
 ]
 
+// Store
+const store = useMoldesStore()
+
+// Estado local del formulario (mantenemos los File aquí)
 const molde = ref({
   nombre: '',
   archivos: Object.fromEntries(camposArchivo.map(c => [c.key, null]))
 })
 
-const moldes = ref([])
+onMounted(() => {
+  store.cargarMoldes()
+})
 
 const handleFileUpload = (event, campo) => {
-  const file = event.target.files[0]
+  const file = event.target.files?.[0]
   if (file) {
     molde.value.archivos[campo] = file
   }
@@ -155,45 +175,51 @@ const handleFileUpload = (event, campo) => {
 
 const removeFile = (campo) => {
   molde.value.archivos[campo] = null
-  document.getElementById(`file-${campo}`).value = ''
+  const input = document.getElementById(`file-${campo}`)
+  if (input) input.value = ''
 }
 
-const generarUrl = (archivo) => {
-  if (!archivo) return null
-  return {
-    name: archivo.name,
-    url: URL.createObjectURL(archivo)
-  }
-}
-
-const addMolde = () => {
+const addMolde = async () => {
   if (!molde.value.nombre.trim()) {
     alert('Debes ingresar un nombre para el conjunto')
     return
   }
 
-  const nuevoMolde = {
-    nombre: molde.value.nombre,
-    camiseta_izq: generarUrl(molde.value.archivos.camiseta_izq),
-    camiseta_der: generarUrl(molde.value.archivos.camiseta_der),
-    short_izq: generarUrl(molde.value.archivos.short_izq),
-    short_der: generarUrl(molde.value.archivos.short_der),
-    manga_izq: generarUrl(molde.value.archivos.manga_izq),
-    manga_der: generarUrl(molde.value.archivos.manga_der)
+  const fd = new FormData()
+  fd.append('nombre', molde.value.nombre)
+
+  // Solo adjuntamos los archivos seleccionados
+  for (const c of camposArchivo) {
+    const f = molde.value.archivos[c.key]
+    if (f) fd.append(c.key, f) // backend debe esperar estos keys
   }
 
-  moldes.value.unshift(nuevoMolde)
-  limpiarCampos()
+  try {
+    await store.crearMolde(fd)
+    limpiarCampos()
+  } catch (e) {
+    alert('No se pudo guardar el molde. Revisa la consola para más detalles.')
+  }
 }
 
-const eliminarMolde = (index) => {
-  moldes.value.splice(index, 1)
+const onEliminar = async (id) => {
+  if (!confirm('¿Eliminar este molde?')) return
+  try {
+    await store.eliminarMolde(id)
+  } catch (e) {
+    alert('No se pudo eliminar el molde.')
+  }
 }
 
 const limpiarCampos = () => {
   molde.value = {
     nombre: '',
     archivos: Object.fromEntries(camposArchivo.map(c => [c.key, null]))
+  }
+  // limpiar inputs file
+  for (const c of camposArchivo) {
+    const input = document.getElementById(`file-${c.key}`)
+    if (input) input.value = ''
   }
 }
 </script>
@@ -207,10 +233,7 @@ const limpiarCampos = () => {
   font-size: 1.125rem;
   border-radius: 0.5rem;
 }
-
-.boton-guardar:hover {
-  background-color: #059669;
-}
+.boton-guardar:hover { background-color: #059669; }
 
 .boton-limpiar {
   background-color: #ec4899;
@@ -220,8 +243,5 @@ const limpiarCampos = () => {
   font-size: 1.125rem;
   border-radius: 0.5rem;
 }
-
-.boton-limpiar:hover {
-  background-color: #db2777;
-}
+.boton-limpiar:hover { background-color: #db2777; }
 </style>

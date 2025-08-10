@@ -2,89 +2,115 @@
   <v-container class="pdf-settings-container" fluid>
     <v-row justify="center">
       <v-col cols="12" md="6">
-        <!-- Título o barra superior -->
-        <v-text-field
-          label="Nombre del archivo PDF"
-          variant="outlined"
-          class="mb-6"
-        />
+        <h2 class="text-h4 mb-6 text-center">Configuración del PDF</h2>
 
-        <!-- Campos de configuración -->
-        <v-text-field
-          v-model="jpegQuality"
-          label="Calidad JPEG"
-          type="number"
-          variant="outlined"
-          class="mb-4"
-        />
+        <v-form @submit.prevent="handleFormSubmit">
+          <v-text-field
+            v-model="fileName"
+            label="Nombre del archivo PDF"
+            variant="outlined"
+            class="mb-4"
+            required
+            :rules="[v => !!v || 'El nombre es obligatorio']"
+          />
 
-        <v-text-field
-          v-model="imageRes"
-          label="Resolución de Imagen"
-          type="number"
-          variant="outlined"
-          class="mb-4"
-        />
+          <v-text-field
+            v-model.number="jpegQuality"
+            label="Calidad JPEG"
+            type="number"
+            variant="outlined"
+            class="mb-4"
+            :rules="[v => (v >= 0 && v <= 100) || 'Debe ser entre 0 y 100']"
+            suffix="%"
+          />
 
-        <v-text-field
-          v-model="colorImageRes"
-          label="Resolución Color"
-          type="number"
-          variant="outlined"
-          class="mb-4"
-        />
+          <v-text-field
+            v-model.number="imageRes"
+            label="Resolución de Imagen"
+            type="number"
+            variant="outlined"
+            class="mb-4"
+            suffix="dpi"
+          />
 
-        <v-text-field
-          v-model="grayImageRes"
-          label="Resolución en Gris"
-          type="number"
-          variant="outlined"
-          class="mb-4"
-        />
+          <v-text-field
+            v-model.number="colorImageRes"
+            label="Resolución Color"
+            type="number"
+            variant="outlined"
+            class="mb-4"
+            suffix="dpi"
+          />
 
-        <!-- Checkbox -->
-        <v-checkbox
-          v-model="compressPdf"
-          label="Comprimir PDF"
-          class="mb-6"
-        />
+          <v-text-field
+            v-model.number="grayImageRes"
+            label="Resolución en Gris"
+            type="number"
+            variant="outlined"
+            class="mb-4"
+            suffix="dpi"
+          />
 
-        <!-- Botones -->
-        <v-row justify="space-between">
-          <v-btn color="primary" @click="submitSettings">Subir archivo</v-btn>
-          <v-btn color="secondary" @click="clearForm">Claro</v-btn>
-        </v-row>
+          <v-switch
+            v-model="compressPdf"
+            label="Comprimir PDF"
+            color="primary"
+            class="mb-6"
+            inset
+          />
+
+          <v-row justify="end" class="gap-2">
+            <v-btn color="secondary" @click="resetForm">
+              Restablecer
+            </v-btn>
+            <v-btn type="submit" color="primary">
+              Generar PDF
+            </v-btn>
+          </v-row>
+        </v-form>
       </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { usePdfSettingsStore } from '@/stores/pdfSettings'
 
-const jpegQuality = ref(85);
-const imageRes = ref(200);
-const colorImageRes = ref(120);
-const grayImageRes = ref(120);
-const compressPdf = ref(true);
+// Store
+const store = usePdfSettingsStore()
+const {
+  fileName,
+  jpegQuality,
+  imageRes,
+  colorImageRes,
+  grayImageRes,
+  compressPdf
+} = storeToRefs(store)
 
-const submitSettings = () => {
-  console.log('Configuración enviada');
-};
+onMounted(() => {
+  // Inicializa leyendo de localStorage (solo front)
+  store.init()
+})
 
-const clearForm = () => {
-  jpegQuality.value = 85;
-  imageRes.value = 200;
-  colorImageRes.value = 120;
-  grayImageRes.value = 120;
-  compressPdf.value = true;
-};
+const handleFormSubmit = () => {
+  // Aquí seguimos en front: solo mostramos/guardamos
+  console.log('Configuración enviada:', store.settings)
+  store.saveToStorage()
+  alert('¡Configuración guardada! Se puede iniciar la generación del PDF.')
+  // Más adelante: aquí llamarías a tu servicio/API con store.settings
+}
+
+const resetForm = () => {
+  store.reset()
+}
 </script>
 
 <style scoped>
 .pdf-settings-container {
-  min-height: 100vh;
   padding-top: 60px;
-  background-color: #f5f5f5;
+  background-color: #f0f2f5;
 }
+.gap-2 { gap: 8px; }
 </style>

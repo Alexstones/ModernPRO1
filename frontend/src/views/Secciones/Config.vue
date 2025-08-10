@@ -1,39 +1,95 @@
 <template>
   <div class="config-container">
-    <!-- LOGIN -->
     <div v-if="!autenticado" class="login-container">
       <h2>Iniciar sesión</h2>
-      <input v-model="email" type="email" placeholder="Correo electrónico" />
-      <input v-model="password" type="password" placeholder="Contraseña" />
-      <button @click="iniciarSesion">Entrar</button>
       <p><strong>ID de esta PC:</strong> {{ visitorId }}</p>
+      <form @submit.prevent="iniciarSesion">
+        <input
+          v-model="email"
+          type="email"
+          placeholder="Correo electrónico"
+          class="login-input"
+        />
+        <input
+          v-model="password"
+          type="password"
+          placeholder="Contraseña"
+          class="login-input"
+        />
+        <button type="submit" class="login-button">Entrar</button>
+      </form>
     </div>
 
-    <!-- TABLA DE TALLAS -->
-    <div v-else class="tabla-tallas">
-      <h2>Selecciona las tallas disponibles</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Talla</th>
-            <th v-for="talla in tallas" :key="talla">{{ talla }} cm</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Seleccionada</td>
-            <td v-for="talla in tallas" :key="talla">
-              <input type="checkbox" :value="talla" v-model="tallasSeleccionadas" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else class="tallas-manager">
+      <h2 class="text-3xl font-bold mb-2 text-center text-gray-800">
+        Gestión de Tallas
+      </h2>
+      <p class="mb-6 text-gray-600 text-center">
+        En esta sección puedes personalizar las medidas de cada talle.
+      </p>
 
-      <div class="resultado">
-        <h3>Tallas seleccionadas:</h3>
-        <p v-if="tallasSeleccionadas.length === 0">Ninguna talla seleccionada.</p>
-        <ul v-else>
-          <li v-for="t in tallasSeleccionadas" :key="t">{{ t }} cm</li>
+      <div class="form-container">
+        <form
+          @submit.prevent="handleFormSubmit"
+          class="flex flex-col md:flex-row gap-4 mb-6"
+        >
+          <input
+            v-model="nuevaTalla"
+            type="text"
+            placeholder="Añadir nueva talla (Ej: S, 150 cm)"
+            class="input-field flex-grow"
+            required
+          />
+          <button type="submit" class="action-button primary-btn">
+            Añadir Talla
+          </button>
+        </form>
+      </div>
+
+      <div class="table-container">
+        <table class="tabla-clara w-full">
+          <thead>
+            <tr>
+              <th>Talla</th>
+              <th class="text-center">Seleccionar</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="tallasStore.tallas.length === 0">
+              <td colspan="3" class="text-center py-4 text-gray-500">
+                No hay tallas disponibles.
+              </td>
+            </tr>
+            <tr v-for="(item, index) in tallasStore.tallas" :key="index">
+              <td>{{ item }}</td>
+              <td class="text-center">
+                <input
+                  type="checkbox"
+                  :value="item"
+                  v-model="tallasStore.tallasSeleccionadas"
+                  class="transform scale-125"
+                />
+              </td>
+              <td class="text-center">
+                <button class="btn-rojo" @click="tallasStore.eliminarTalla(index)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-8 p-4 bg-gray-100 rounded-lg shadow-inner">
+        <h3 class="font-bold text-lg mb-2 text-gray-800">
+          Tallas seleccionadas:
+        </h3>
+        <p v-if="tallasStore.tallasSeleccionadas.length === 0" class="text-gray-500">
+          Ninguna talla seleccionada.
+        </p>
+        <ul v-else class="list-disc list-inside text-gray-700">
+          <li v-for="t in tallasStore.tallasSeleccionadas" :key="t">{{ t }} cm</li>
         </ul>
       </div>
     </div>
@@ -43,27 +99,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import FingerprintJS from '@fingerprintjs/fingerprintjs'
+import { useTallasStore } from '@/stores/tallas'
 
-// Estado de login
+// Accede al store de Pinia
+const tallasStore = useTallasStore()
+
+// --- Estado y Lógica de Autenticación (Se mantiene en el componente) ---
 const email = ref('')
 const password = ref('')
 const autenticado = ref(false)
-
-// ID de visitante
 const visitorId = ref('')
+const idAutorizado = '9398492c7d09f97894abd41332fcecd5'
 
-// ID autorizado (solo este dispositivo podrá iniciar sesión)
-const idAutorizado = '12b1bbef440295fbd1a596d71ad7967d' // <-- reemplaza esto con tu ID válido
-
-// Cargar FingerprintJS al montar el componente
-onMounted(async () => {
-  const fp = await FingerprintJS.load()
-  const result = await fp.get()
-  visitorId.value = result.visitorId
-  console.log('Visitor ID:', visitorId.value)
-})
-
-// Función de login
 const iniciarSesion = () => {
   if (email.value === 'admin@gmail.com' && password.value === '123456') {
     if (visitorId.value !== idAutorizado) {
@@ -76,85 +123,134 @@ const iniciarSesion = () => {
   }
 }
 
-// Tallas específicas disponibles
-const tallas = [108, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160]
-const tallasSeleccionadas = ref([])
-</script>
+// --- Estado y Lógica de CRUD de Tallas (Ahora usa el store) ---
+const nuevaTalla = ref('')
 
-<style lang="scss" scoped>
-.config-container {
-  margin: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+const handleFormSubmit = () => {
+  tallasStore.addTalla(nuevaTalla.value)
+  nuevaTalla.value = ''
 }
 
+// Cargar FingerprintJS al montar el componente
+onMounted(async () => {
+  const fp = await FingerprintJS.load()
+  const result = await fp.get()
+  visitorId.value = result.visitorId
+})
+</script>
+
+<style scoped>
+.config-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: sans-serif;
+}
+
+/* Estilos para el Login */
 .login-container {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  max-width: 350px;
+  margin: 0 auto;
   gap: 1rem;
-  max-width: 300px;
-  width: 100%;
-
-  input {
-    padding: 0.5rem;
-    font-size: 1rem;
-  }
-
-  button {
-    padding: 0.6rem;
-    font-weight: bold;
-    background-color: #0077ff;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-  }
 }
 
-.tabla-tallas {
-  margin-top: 2rem;
-  overflow-x: auto;
+.login-container h2 {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.login-container input {
   width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
 
-  h2 {
-    margin-bottom: 1rem;
-    text-align: center;
-  }
+.login-button {
+  width: 100%;
+  padding: 0.75rem;
+  font-weight: bold;
+  background-color: #3b82f6; /* blue-500 */
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
 
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    min-width: 800px;
+.login-button:hover {
+  background-color: #2563eb; /* blue-600 */
+}
 
-    th,
-    td {
-      border: 1px solid #ccc;
-      padding: 0.5rem;
-      text-align: center;
-      white-space: nowrap;
-    }
+/* Estilos de la gestión de tallas */
+.tallas-manager {
+  /* Separador visual para el modo autenticado */
+}
 
-    th {
-      background-color: #f0f0f0;
-    }
+.form-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
 
-    input[type='checkbox'] {
-      transform: scale(1.2);
-    }
-  }
+.input-field {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db; /* gray-300 */
+  border-radius: 6px;
+  background-color: white;
+  color: #1f2937;
+}
 
-  .resultado {
-    margin-top: 1.5rem;
+.action-button {
+  padding: 0.75rem 1.5rem;
+  font-weight: bold;
+  border-radius: 6px;
+  color: white;
+  transition: background-color 0.2s;
+}
 
-    h3 {
-      font-weight: bold;
-    }
+.primary-btn {
+  background-color: #10b981; /* emerald-500 */
+}
+.primary-btn:hover {
+  background-color: #059669; /* emerald-600 */
+}
 
-    ul {
-      list-style: disc;
-      margin-left: 1.2rem;
-    }
-  }
+.tabla-clara {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-clara th,
+.tabla-clara td {
+  border: 1px solid #d1d5db; /* gray-300 */
+  padding: 0.75rem;
+  text-align: center;
+  color: #1f2937;
+}
+
+.tabla-clara th {
+  background-color: #e5e7eb; /* gray-200 */
+  color: #1f2937;
+}
+
+.btn-rojo {
+  background: #ef4444; /* red-500 */
+  padding: 0.5rem 1rem;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+.btn-rojo:hover {
+  background-color: #dc2626; /* red-600 */
 }
 </style>

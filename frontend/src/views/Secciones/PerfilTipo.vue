@@ -4,40 +4,50 @@
       <h2 class="text-center font-weight-bold text-h4">Perfil de las fuentes</h2>
     </v-row>
 
-    <!-- Botones principales -->
     <v-row justify="start" class="mb-4" dense>
-      <v-btn color="primary" class="mr-2">Subir Fuente</v-btn>
-      <v-btn color="error">Eliminar Fuente</v-btn>
+      <v-btn color="primary" class="mr-2" @click="handleUploadClick">Subir Fuente</v-btn>
+      <v-btn color="error" :disabled="!fuenteSeleccionada.length" @click="handleEliminarFuente">Eliminar Fuente</v-btn>
     </v-row>
 
-    <!-- Tabla de fuentes -->
     <v-data-table
+      v-model="fuenteSeleccionada"
+      show-select
       :headers="headersFuente"
-      :items="fuentes"
+      :items="fuentesStore.fuentes"
+      item-value="id"
       class="mb-8"
       dense
-      hide-default-footer
     />
 
-    <!-- Botón y tabla de perfil -->
     <v-row justify="start" class="mb-2">
-      <v-btn color="error">Eliminar Perfil de fuente</v-btn>
+      <v-btn color="error" :disabled="!perfilSeleccionado.length" @click="handleEliminarPerfil">Eliminar Perfil de fuente</v-btn>
     </v-row>
 
     <v-data-table
+      v-model="perfilSeleccionado"
+      show-select
       :headers="headersPerfil"
-      :items="perfiles"
+      :items="fuentesStore.perfiles"
+      item-value="id"
       dense
-      hide-default-footer
     />
+
+    <input ref="fileInput" type="file" accept=".ttf,.otf" class="hidden" @change="handleFile" />
   </v-container>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useFuentesStore } from '@/stores/fuentes'
+
+// Accede al store de Pinia
+const fuentesStore = useFuentesStore()
+
+// Encabezados de las tablas
 const headersFuente = [
   { title: 'Nombre Fuente', key: 'nombre' },
   { title: 'Path Fuente', key: 'path' }
-];
+]
 
 const headersPerfil = [
   { title: 'Perfil Fuente', key: 'perfil' },
@@ -45,32 +55,51 @@ const headersPerfil = [
   { title: 'Cont', key: 'cont' },
   { title: 'Dir Letra', key: 'letra' },
   { title: 'Dir Contorno', key: 'contorno' }
-];
+]
 
-// Datos simulados
-const fuentes = [
-  { nombre: 'Adidas 2014', path: 'C:/Fonts/ADIDAS2014.ttf' },
-  { nombre: 'Arsenal2014ROY.TTF', path: 'C:/Fonts/ARSENAL2014ROY.TTF' },
-  // más registros...
-];
+// Estado local del componente
+const fuenteSeleccionada = ref([])
+const perfilSeleccionado = ref([])
+const fileInput = ref(null)
 
-const perfiles = [
-  {
-    perfil: 'Adidas 2014 letras negras',
-    fuente: 'Adidas2014',
-    cont: '2 mm',
-    letra: '255 255 255',
-    contorno: '0 0 0'
-  },
-  {
-    perfil: 'nike blanco',
-    fuente: 'CorinthiansNike2018',
-    cont: '2 mm',
-    letra: '255 255 255',
-    contorno: '0 0 0'
+const handleUploadClick = () => {
+  fileInput.value.click()
+}
+
+const handleFile = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  await fuentesStore.uploadFuente(file)
+  fileInput.value.value = ''
+}
+
+const handleEliminarFuente = async () => {
+  if (!fuenteSeleccionada.value.length) return
+
+  if (confirm('¿Eliminar las fuentes seleccionadas?')) {
+    for (const id of fuenteSeleccionada.value) {
+      await fuentesStore.eliminarFuente(id)
+    }
+    fuenteSeleccionada.value = []
   }
-  // más perfiles...
-];
+}
+
+const handleEliminarPerfil = async () => {
+  if (!perfilSeleccionado.value.length) return
+
+  if (confirm('¿Eliminar los perfiles de fuente seleccionados?')) {
+    for (const id of perfilSeleccionado.value) {
+      await fuentesStore.eliminarPerfil(id)
+    }
+    perfilSeleccionado.value = []
+  }
+}
+
+// Llamadas a la API al montar el componente para inicializar el estado
+onMounted(() => {
+  fuentesStore.fetchFuentes()
+  fuentesStore.fetchPerfiles()
+})
 </script>
 
 <style scoped>
