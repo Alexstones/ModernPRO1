@@ -1,90 +1,118 @@
 <template>
-  <v-container fluid class="product-form-container">
-    <v-row>
+  <v-container fluid class="product-form-container-dark">
+    <v-row justify="center">
       <v-col cols="12" md="6">
-        <h2 class="text-h5 mb-4">Añadir/Editar Producto</h2>
-        <v-form ref="productForm" @submit.prevent="handleProductSubmit">
-          <v-text-field
-            v-model="form.nombre"
-            label="Nombre Producto"
-            class="mb-3"
-            :rules="[v => !!v || 'El nombre es obligatorio']"
-          />
-
-          <v-select
-            v-model="form.tipo"
-            :items="tiposProducto"
-            label="Tipo de Producto"
-            class="mb-3"
-            :rules="[v => !!v || 'El tipo es obligatorio']"
-          />
-
-          <v-row v-for="campo in camposAdjuntos" :key="campo.model" class="mb-2" align="center">
-            <v-col cols="7">
+        <v-card class="product-card-dark" elevation="10">
+          <v-card-title class="product-title-dark">
+            <v-icon class="me-2 text-white">mdi-tshirt-crew</v-icon>
+            <h2 class="text-h5 text-white">Añadir/Editar Producto</h2>
+          </v-card-title>
+          <v-card-text>
+            <v-form ref="productForm" @submit.prevent="handleProductSubmit">
               <v-text-field
-                :model-value="form[campo.model] ? form[campo.model].name : 'Ningún archivo seleccionado'"
-                :label="campo.label"
-                readonly
+                v-model="form.nombre"
+                label="Nombre Producto"
+                variant="outlined"
+                class="mb-3 product-field-dark"
+                :rules="[v => !!v || 'El nombre es obligatorio']"
               />
-            </v-col>
-            <v-col cols="5">
-              <v-btn color="primary" @click="adjuntarArchivo(campo.model)">Adjuntar</v-btn>
-              <input
-                type="file"
-                :ref="el => fileInputs[campo.model] = el"
-                style="display: none"
-                @change="onFileSelected($event, campo.model)"
+
+              <v-select
+                v-model="form.tipo"
+                :items="tiposProducto"
+                label="Tipo de Producto"
+                variant="outlined"
+                class="mb-3 product-field-dark"
+                :rules="[v => !!v || 'El tipo es obligatorio']"
               />
-            </v-col>
-          </v-row>
 
-          <v-select
-            v-model="form.ptfeLetra"
-            :items="fuentes"
-            label="Fuente Letras"
-            class="mb-3"
-          />
-          <v-select
-            v-model="form.ptfeNumero"
-            :items="fuentes"
-            label="Fuente Números"
-            class="mb-5"
-          />
+              <v-row v-for="campo in camposAdjuntos" :key="campo.model" class="mb-2" align="center">
+                <v-col cols="12" sm="7">
+                  <v-text-field
+                    :model-value="form[campo.model] ? form[campo.model].name : 'Ningún archivo seleccionado'"
+                    :label="campo.label"
+                    readonly
+                    variant="outlined"
+                    class="product-field-dark"
+                  />
+                </v-col>
+                <v-col cols="12" sm="5">
+                  <v-btn color="secondary" class="product-btn" block @click="adjuntarArchivo(campo.model)">
+                    <v-icon left>mdi-paperclip</v-icon> Adjuntar
+                  </v-btn>
+                  <input
+                    type="file"
+                    :ref="el => fileInputs[campo.model] = el"
+                    style="display: none"
+                    @change="onFileSelected($event, campo.model)"
+                  />
+                </v-col>
+              </v-row>
 
-          <v-row justify="end" class="gap-2">
-            <v-btn color="info" @click="resetForm">Limpiar</v-btn>
-            <v-btn type="submit" color="success">{{ editingIndex === -1 ? 'Añadir Producto' : 'Actualizar Producto' }}</v-btn>
-          </v-row>
-        </v-form>
+              <v-select
+                v-model="form.ptfeLetra"
+                :items="fuentes"
+                label="Fuente Letras"
+                variant="outlined"
+                class="mb-3 product-field-dark"
+              />
+              <v-select
+                v-model="form.ptfeNumero"
+                :items="fuentes"
+                label="Fuente Números"
+                variant="outlined"
+                class="mb-5 product-field-dark"
+              />
+
+              <v-row justify="end" class="gap-2">
+                <v-btn color="secondary" class="product-btn" @click="resetForm">
+                  <v-icon left>mdi-refresh</v-icon> Limpiar
+                </v-btn>
+                <v-btn type="submit" color="primary" class="product-btn">
+                  <v-icon left>mdi-plus</v-icon>
+                  {{ editingIndex === -1 ? 'Añadir Producto' : 'Actualizar Producto' }}
+                </v-btn>
+              </v-row>
+            </v-form>
+          </v-card-text>
+        </v-card>
       </v-col>
 
       <v-col cols="12" md="6">
-        <h2 class="text-h5 mb-4">Lista de Productos</h2>
-        <v-data-table
-          :headers="headers"
-          :items="productosStore.productos"
-          class="elevation-1"
-          item-key="nombre"
-          @click:row="editProduct"
-          show-select
-          v-model="selectedProducts"
-        >
-          <template v-slot:item.actions="{ item }">
-            <v-btn
-              icon
-              small
-              @click.stop="productosStore.deleteProduct(item)"
-              color="error"
+        <v-card class="product-card-dark" elevation="10">
+          <v-card-title class="product-title-dark">
+            <v-icon class="me-2 text-white">mdi-format-list-bulleted</v-icon>
+            <h2 class="text-h5 text-white">Lista de Productos</h2>
+          </v-card-title>
+          <v-card-text>
+            <v-data-table
+              :headers="headers"
+              :items="productosStore.productos"
+              class="elevation-1 product-table-dark"
+              item-key="nombre"
+              @click:row="editProduct"
+              show-select
+              v-model="selectedProducts"
             >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </template>
-        </v-data-table>
-        <v-row justify="end" class="mt-4">
-          <v-btn color="error" @click="handleDeleteSelected" :disabled="!selectedProducts.length">
-            Eliminar seleccionados
-          </v-btn>
-        </v-row>
+              <template v-slot:item.actions="{ item }">
+                <v-btn
+                  icon
+                  small
+                  @click.stop="productosStore.deleteProduct(item)"
+                  color="error"
+                  class="product-table-icon-btn"
+                >
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </template>
+            </v-data-table>
+            <v-row justify="end" class="mt-4">
+              <v-btn color="error" class="product-btn" @click="handleDeleteSelected" :disabled="!selectedProducts.length">
+                <v-icon left>mdi-delete</v-icon> Eliminar seleccionados
+              </v-btn>
+            </v-row>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
   </v-container>
@@ -146,7 +174,9 @@ const handleProductSubmit = async () => {
 const resetForm = () => {
   Object.assign(form, defaultForm);
   editingIndex.value = -1;
-  productForm.value.reset();
+  if (productForm.value) {
+    productForm.value.reset();
+  }
 };
 
 const editProduct = (event, { item, index }) => {
@@ -172,13 +202,102 @@ const onFileSelected = (event, campo) => {
 </script>
 
 <style scoped>
-.product-form-container {
-  padding: 30px;
-  background-color: #f0f4f8;
+.product-form-container-dark {
+  background: linear-gradient(135deg, #1e3a8a 0%, #155e75 100%);
+  padding: 64px 16px;
   min-height: 100vh;
 }
 
-.gap-2 {
-  gap: 8px; /* Espacio entre los botones */
+.product-card-dark {
+  border-radius: 16px;
+  background-color: #2c2c3e;
+  color: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.product-title-dark {
+  background: linear-gradient(45deg, #ff6b6b, #ffa500);
+  color: white;
+  padding: 24px;
+  font-weight: 700;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-field-dark:deep(.v-label),
+.product-field-dark:deep(.v-field__input) {
+  color: #ccc !important;
+  opacity: 1 !important;
+}
+
+.product-field-dark:deep(.v-field) {
+  background-color: #3e3e57 !important;
+  color: white !important;
+  border-radius: 8px;
+  border: 1px solid #4f4f72;
+}
+
+.product-field-dark:deep(.v-field__outline) {
+  display: none;
+}
+
+.product-field-dark:deep(.v-select__selection) {
+  color: white !important;
+}
+
+.product-btn {
+  font-weight: 700;
+  border-radius: 8px;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.product-btn.v-btn--active {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.product-table-dark {
+  background-color: #2c2c3e !important;
+  border-radius: 12px;
+}
+
+.product-table-dark:deep(.v-table) {
+  color: white;
+  background-color: #2c2c3e !important;
+}
+
+.product-table-dark:deep(thead) {
+  background-color: #3e3e57 !important;
+  color: white !important;
+}
+
+.product-table-dark:deep(th) {
+  color: white !important;
+  font-weight: bold;
+}
+
+.product-table-dark:deep(tbody tr:hover) {
+  background-color: #3e3e57 !important;
+}
+
+.product-table-dark:deep(tbody tr:hover .v-btn) {
+  opacity: 1 !important;
+}
+
+.product-table-dark:deep(.v-btn) {
+  opacity: 0.8;
+}
+
+.product-table-icon-btn {
+  color: #ef5350;
+}
+
+.text-white {
+  color: white !important;
 }
 </style>

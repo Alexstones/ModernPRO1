@@ -1,220 +1,101 @@
 <template>
-  <v-app-bar v-if="anchoPantalla() > 700" color="transparent" height="100" scroll-behavior="hide" elevation="0"
-    class="navbar-blur">
-    <v-card class="d-flex justify-center ms-5" elevation="5" >
-      <v-card-title class="d-flex text-h5 mt-2">
+  <v-app-bar
+    v-if="anchoPantalla() > 700"
+    height="100"
+    scroll-behavior="hide"
+    elevation="0"
+    class="navbar-cool-gradient"
+  >
+    <v-card class="navbar-card-glow mx-auto" elevation="8">
+      <v-card-title class="d-flex align-center text-h5 font-weight-bold text-white me-8">
         MODELPRO
       </v-card-title>
+      
+      <v-divider vertical class="mx-4" />
+
       <router-link to="/generar" class="nav-link">
-        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Generador PDF</v-btn>
+        <v-btn text class="nav-btn">Generador PDF</v-btn>
       </router-link>
       <router-link to="/perfil" class="nav-link">
-        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Perfil Producto PDF</v-btn>
+        <v-btn text class="nav-btn">Perfil Producto PDF</v-btn>
       </router-link>
       <router-link to="/moldes" class="nav-link">
-        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Moldes</v-btn>
+        <v-btn text class="nav-btn">Moldes</v-btn>
       </router-link>
       <router-link to="/perfil_tipo" class="nav-link">
-        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Perfil tipografía</v-btn>
+        <v-btn text class="nav-btn">Perfil tipografía</v-btn>
       </router-link>
       <router-link to="/tallas" class="nav-link">
-        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Tallas</v-btn>
+        <v-btn text class="nav-btn">Tallas</v-btn>
       </router-link>
       <router-link to="/config" class="nav-link">
-        <v-btn text color="black" elevation="2"   class="text-h6 nav-btn mt-4 mb-4">Config</v-btn>
+        <v-btn text class="nav-btn">Config</v-btn>
       </router-link>
     </v-card>
   </v-app-bar>
-
-
-  <v-navigation-drawer v-if="anchoPantalla() <= 700" v-model="drawer" app temporary height="100vh" elevation="0"
-    style="background-color: rgba(132, 189, 0, 0.8);" class=" ms-n4">
-    <v-list>
-      <!-- Inicio -->
-      <v-list-item @click="navigateTo('/')">
-        <v-btn text class="text-h5 nav-btn bg-transparent text-white" elevation="0">
-          inicio
-        </v-btn>
-      </v-list-item>
-
-      <!-- SmartGin -->
-      <v-list-item @click="navigateTo('/smartgin')">
-        <v-btn class="text-h5 nav-btn bg-transparent text-white" elevation="0">
-          SmartGin
-        </v-btn>
-      </v-list-item>
-
-      <!-- SISCO Industrial -->
-      <v-list-item @click="navigateTo('/siscoIndustrial')">
-        <v-btn class="text-h5 nav-btn bg-transparent text-white" elevation="0">
-          Sisco Industrial
-        </v-btn>
-      </v-list-item>
-      <!-- SISCO Fabricacion -->
-      <v-list-item @click="navigateTo('/siscoFabricacion')">
-        <v-btn class="text-h5 nav-btn bg-transparent text-white" elevation="0">
-          Sisco Diseño
-        </v-btn>
-      </v-list-item>
-
-      <!-- Contacto -->
-      <v-list-item @click="navigateTo('/contacto')">
-        <v-btn text class="text-h5 nav-btn bg-transparent text-white" elevation="0">
-          contacto
-        </v-btn>
-      </v-list-item>
-
-
-    </v-list>
-  </v-navigation-drawer>
-  <!-- Botón para activar/desactivar el drawer en vista móvil -->
-  <v-app-bar v-if="anchoPantalla() <= 700" color="transparent" height="100" scroll-behavior="hide" elevation="0">
-    <v-btn v-if="drawer == false" icon @click="drawer = !drawer"
-      style="background-color: #84bd00; color: white; border-radius: 50%;">
-      <v-icon>mdi-menu</v-icon>
-    </v-btn>
-    <v-spacer></v-spacer>
-  </v-app-bar>
-
-
-
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { anchoPantalla } from '@/Utils/Helpers';
-
-
-// Variable para controlar el color del texto
-const textColor = ref('white');
-const drawer = ref(false);
-
-// Obtener la ruta activa y el router
-const route = useRoute();
-const router = useRouter();
-
-
-
-// Función para alternar idioma
-const toggleLanguage = () => {
-  locale.value = locale.value === 'es' ? 'en' : 'es';
+const anchoPantalla = () => {
+  return window.innerWidth;
 };
-
-// Función para actualizar el color del texto basado en la ruta
-const updateTextColor = () => {
-  if (route.path === '/contacto') {
-    textColor.value = '#84bd00'; // Verde si está en "contacto"
-  } else {
-    textColor.value = 'white'; // Blanco para otras rutas
-  }
-};
-
-// Función para detectar el scroll y cambiar el color de texto
-const handleScroll = () => {
-  const scrollPosition = window.scrollY;
-
-  if (scrollPosition > 100 || route.path === '/contacto') {
-    textColor.value = '#84bd00';
-  } else {
-    textColor.value = 'white';
-  }
-};
-
-const navigateTo = (path) => {
-  drawer.value = false; // Cerrar el drawer
-  router.push(path);
-};
-
-// Escuchar el evento de scroll y cambios en el router
-onMounted(() => {
-  window.addEventListener('scroll', handleScroll);
-  router.beforeEach((to, from, next) => {
-    if (to.path === '/contacto') {
-      textColor.value = '#84bd00';
-    } else {
-      textColor.value = 'white';
-    }
-    next();
-  });
-  updateTextColor(); // Verificar el estado inicial al cargar
-});
-
-// Limpiar el evento de scroll y el listener del router
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-});
 </script>
 
 <style scoped>
-.navbar-blur {
-  backdrop-filter: blur(12px);
-  background-color: rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.nav-btn {
-  text-transform: none;
-  font-weight: 500;
-  font-size: 18px;
-  color: white;
-  transition: color 0.3s ease;
-}
-
-.nav-btn:hover {
-  color: #84bd00;
-}
-
-.nav-link {
-  text-decoration: none;
-  margin: 0 16px;
-}
-
-.navbar {
-  font-family: Arial, sans-serif;
-  color: #84bd00;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+.navbar-cool-gradient {
+  background: linear-gradient(90deg, #1f2937 0%, #374151 100%) !important;
+  border-bottom: 2px solid #5a647d;
+  padding: 0 !important;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
-.logo-container {
+.navbar-card-glow {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease-in-out;
 }
 
-.logo-item {
-  border-radius: 10%;
-  padding: 20px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-}
-
-.logo-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.nav-btn {
-  text-transform: none;
-  font-weight: 600;
-  font-size: 16px;
-  transition: color 0.3s ease;
-}
-
-.nav-btn:hover {
-  color: #3900bd;
+.navbar-card-glow:hover {
+  box-shadow: 0 0 25px rgba(121, 194, 255, 0.3), 0 0 50px rgba(121, 194, 255, 0.1);
 }
 
 .nav-link {
   text-decoration: none;
 }
 
-.ms-auto {
-  margin-left: auto;
+.nav-btn {
+  font-weight: 600;
+  text-transform: none;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  color: white !important;
+  background-color: transparent;
+  border-radius: 8px;
+  padding: 0 16px;
+  height: 48px !important;
+  transition: all 0.3s ease-in-out;
 }
 
-.mt-n20 {
-  margin-top: -6.5rem !important;
+.nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilo para el botón de la página actual */
+.router-link-active .nav-btn {
+  background: linear-gradient(45deg, #79c2ff, #4784ff) !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(71, 132, 255, 0.6);
+  font-weight: 700;
 }
 </style>
