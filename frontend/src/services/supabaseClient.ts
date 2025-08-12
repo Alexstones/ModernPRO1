@@ -1,6 +1,19 @@
+// src/services/supabaseClient.js
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://tzchczbqhpvqlbxbpqvd.supabase.co' // ← tu URL de Supabase
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6Y2hjemJxaHB2cWxieGJwcXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTk3NzY0NDMsImV4cCI6MjAxNTM1MjQ0M30.pMkN5nmFMIaGPGNdAznjMoyAkK_GQJKziKxLYM6_H3Q' // ← tu anon key pública
+// Lee de .env del frontend (VITE_*). No rompemos la app si faltan.
+const url  = import.meta.env.VITE_SUPABASE_URL || ''
+const anon = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (!url || !anon) {
+  console.warn('[Supabase] Faltan variables VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
+}
+
+export const supabase = (url && anon)
+  ? createClient(url, anon, { auth: { persistSession: true, autoRefreshToken: true } })
+  : null
+
+export const getClientInfo = () => ({
+  url: url || '(sin URL por env)',
+  usingFallback: false
+})

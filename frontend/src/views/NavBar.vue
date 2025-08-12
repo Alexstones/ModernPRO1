@@ -10,29 +10,40 @@
       <v-card-title class="d-flex align-center text-h5 font-weight-bold text-white me-8">
         MODELPRO
       </v-card-title>
-      
+
       <v-divider vertical class="mx-4" />
 
-      
-      <router-link to="/Clientes" class="nav-link">
+      <!-- NUEVO: Inicio -->
+      <router-link to="/home" class="nav-link" aria-label="Ir a Inicio">
+        <v-btn text class="nav-btn">Inicio</v-btn>
+      </router-link>
+
+      <!-- Rutas en minúsculas para coincidir con el router -->
+      <router-link to="/clientes" class="nav-link" aria-label="Ir a Clientes">
         <v-btn text class="nav-btn">Clientes</v-btn>
       </router-link>
-      <router-link to="/generar" class="nav-link">
+
+      <router-link to="/generar" class="nav-link" aria-label="Ir a Generador PDF">
         <v-btn text class="nav-btn">Generador PDF</v-btn>
       </router-link>
-      <router-link to="/perfil" class="nav-link">
+
+      <router-link to="/perfil" class="nav-link" aria-label="Ir a Perfil Producto PDF">
         <v-btn text class="nav-btn">Perfil Producto PDF</v-btn>
       </router-link>
-      <router-link to="/moldes" class="nav-link">
+
+      <router-link to="/moldes" class="nav-link" aria-label="Ir a Moldes">
         <v-btn text class="nav-btn">Moldes</v-btn>
       </router-link>
-      <router-link to="/perfil_tipo" class="nav-link">
+
+      <router-link to="/perfil_tipo" class="nav-link" aria-label="Ir a Perfil tipografía">
         <v-btn text class="nav-btn">Perfil tipografía</v-btn>
       </router-link>
-      <router-link to="/tallas" class="nav-link">
+
+      <router-link to="/tallas" class="nav-link" aria-label="Ir a Tallas">
         <v-btn text class="nav-btn">Tallas</v-btn>
       </router-link>
-      <router-link to="/config" class="nav-link">
+
+      <router-link to="/config" class="nav-link" aria-label="Ir a Configuración">
         <v-btn text class="nav-btn">Config</v-btn>
       </router-link>
     </v-card>
@@ -40,9 +51,7 @@
 </template>
 
 <script setup>
-const anchoPantalla = () => {
-  return window.innerWidth;
-};
+const anchoPantalla = () => window.innerWidth
 </script>
 
 <style scoped>
@@ -64,16 +73,13 @@ const anchoPantalla = () => {
   padding: 8px 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease-in-out;
+  transition: all .3s ease-in-out;
 }
-
 .navbar-card-glow:hover {
   box-shadow: 0 0 25px rgba(121, 194, 255, 0.3), 0 0 50px rgba(121, 194, 255, 0.1);
 }
 
-.nav-link {
-  text-decoration: none;
-}
+.nav-link { text-decoration: none; }
 
 .nav-btn {
   font-weight: 600;
@@ -85,21 +91,20 @@ const anchoPantalla = () => {
   border-radius: 8px;
   padding: 0 16px;
   height: 48px !important;
-  transition: all 0.3s ease-in-out;
+  transition: all .3s ease-in-out;
 }
-
 .nav-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 20px rgba(0,0,0,.2);
 }
 
-/* Estilo para el botón de la página actual */
+/* Botón activo (router-link-active) */
 .router-link-active .nav-btn {
   background: linear-gradient(45deg, #79c2ff, #4784ff) !important;
-  color: white !important;
+  color: #fff !important;
   transform: translateY(-2px);
-  box-shadow: 0 0 15px rgba(71, 132, 255, 0.6);
+  box-shadow: 0 0 15px rgba(71, 132, 255, .6);
   font-weight: 700;
 }
 </style>
