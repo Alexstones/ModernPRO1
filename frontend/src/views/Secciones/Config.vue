@@ -1,54 +1,145 @@
 <template>
   <div class="config-container-dark">
-    <!-- LOGIN -->
-    <div v-if="!autenticado" class="card-dark overflow-hidden login-card">
+    <!-- Registro -->
+    <div v-if="!registrado" class="card-dark overflow-hidden login-card" role="form" aria-labelledby="titulo-registro">
       <div class="card-title-gradient">
-        <h2 class="m-0 text-white text-h5">Iniciar sesión</h2>
+        <h2 id="titulo-registro" class="m-0 text-white text-h5">Crear cuenta</h2>
       </div>
 
       <div class="p-6">
         <p class="mb-4 text-gray-200">
-          <strong>ID de esta PC:</strong> {{ visitorId }}
+          <strong>ID de esta PC:</strong> {{ visitorId || 'Detectando…' }}
         </p>
 
-        <form @submit.prevent="iniciarSesion" class="space-y-4 max-w-sm">
-          <input
-            v-model="email"
-            type="email"
-            placeholder="Correo electrónico"
-            class="product-input w-full"
-            required
-          />
-          <input
-            v-model="password"
-            type="password"
-            placeholder="Contraseña"
-            class="product-input w-full"
-            required
-          />
-          <button type="submit" class="btn-blue w-full">Entrar</button>
+        <form @submit.prevent="handleRegister" class="space-y-4 max-w-sm" novalidate>
+          <div class="field">
+            <label class="label" for="nombre">Nombre completo</label>
+            <input
+              id="nombre"
+              v-model.trim="form.nombre"
+              type="text"
+              placeholder="Tu nombre y apellidos"
+              class="product-input w-full"
+              :aria-invalid="errors.nombre ? 'true' : 'false'"
+              required
+              autocomplete="name"
+            />
+            <p v-if="errors.nombre" class="err">{{ errors.nombre }}</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="email">Correo electrónico</label>
+            <input
+              id="email"
+              v-model.trim="form.email"
+              type="email"
+              placeholder="correo@dominio.com"
+              class="product-input w-full"
+              :aria-invalid="errors.email ? 'true' : 'false'"
+              required
+              autocomplete="email"
+            />
+            <p v-if="errors.email" class="err">{{ errors.email }}</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="telefono">Teléfono (opcional)</label>
+            <input
+              id="telefono"
+              v-model.trim="form.telefono"
+              type="tel"
+              placeholder="Ej: +52 55 1234 5678"
+              class="product-input w-full"
+              autocomplete="tel"
+            />
+          </div>
+
+          <div class="field">
+            <label class="label" for="password">Contraseña</label>
+            <div class="relative">
+              <input
+                :type="showPass ? 'text' : 'password'"
+                id="password"
+                v-model="form.password"
+                placeholder="Mínimo 8 caracteres"
+                class="product-input w-full pr-12"
+                :aria-invalid="errors.password ? 'true' : 'false'"
+                required
+                autocomplete="new-password"
+              />
+              <button
+                type="button"
+                class="toggle-eye"
+                @click="showPass = !showPass"
+                :aria-label="showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                {{ showPass ? '🙈' : '👁️' }}
+              </button>
+            </div>
+            <p v-if="errors.password" class="err">{{ errors.password }}</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="password2">Repite la contraseña</label>
+            <input
+              :type="showPass2 ? 'text' : 'password'"
+              id="password2"
+              v-model="form.password2"
+              placeholder="Confirma tu contraseña"
+              class="product-input w-full"
+              :aria-invalid="errors.password2 ? 'true' : 'false'"
+              required
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="toggle-eye-standalone"
+              @click="showPass2 = !showPass2"
+              :aria-label="showPass2 ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              {{ showPass2 ? '🙈' : '👁️' }}
+            </button>
+            <p v-if="errors.password2" class="err">{{ errors.password2 }}</p>
+          </div>
+
+          <div class="field flex items-center gap-2">
+            <input type="checkbox" id="acepto" v-model="form.acepto" class="check-lg" />
+            <label class="label" for="acepto">Acepto los términos y condiciones</label>
+            <p v-if="errors.acepto" class="err">{{ errors.acepto }}</p>
+          </div>
+
+          <button type="submit" class="btn-blue w-full mt-4" :disabled="submitting || !canSubmit">
+            <span v-if="submitting">Creando cuenta…</span>
+            <span v-else>Registrarme</span>
+          </button>
+
+          <p v-if="serverMsg" class="server-msg" :class="{ ok: serverOk, bad: !serverOk }">
+            {{ serverMsg }}
+          </p>
         </form>
       </div>
     </div>
 
-    <!-- GESTIÓN TALLAS -->
+    <!-- Gestión de Tallas (post-registro) -->
     <div v-else class="card-dark overflow-hidden">
       <div class="card-title-gradient">
         <h2 class="m-0 text-white text-h5 text-center">Gestión de Tallas</h2>
       </div>
 
       <div class="p-6">
-        <p class="mb-6 text-gray-200 text-center">
-          En esta sección puedes personalizar las medidas de cada talle.
+        <p class="mb-2 text-gray-200 text-center">
+          Cuenta creada para <strong>{{ form.nombre }}</strong> ({{ form.email }}).
+        </p>
+        <p class="mb-6 text-gray-300 text-center">
+          ID de dispositivo registrado: <code>{{ visitorId }}</code>
         </p>
 
-        <!-- Form -->
         <div class="form-container">
           <form @submit.prevent="handleFormSubmit" class="flex flex-col md:flex-row gap-4 mb-6">
             <input
-              v-model="nuevaTalla"
+              v-model.trim="nuevaTalla"
               type="text"
-              placeholder="Añadir nueva talla (Ej: S, 150 cm)"
+              placeholder="Añadir nueva talla (Ej: S, 150)"
               class="product-input flex-grow"
               required
             />
@@ -57,7 +148,6 @@
           </form>
         </div>
 
-        <!-- Tabla -->
         <div class="table-container">
           <table class="table-dark w-full">
             <thead>
@@ -85,16 +175,13 @@
                   />
                 </td>
                 <td class="text-center">
-                  <button class="btn-danger" @click="tallasStore.eliminarTalla(index)">
-                    Eliminar
-                  </button>
+                  <button class="btn-danger" @click="tallasStore.eliminarTalla(index)">Eliminar</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Seleccionadas -->
         <div class="mt-8 p-4 info-box">
           <h3 class="font-bold text-lg mb-2 text-white">Tallas seleccionadas:</h3>
           <p v-if="tallasStore.tallasSeleccionadas.length === 0" class="text-gray-300">
@@ -110,42 +197,143 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import FingerprintJS from '@fingerprintjs/fingerprintjs'
+import axios from 'axios'
 import { useTallasStore } from '@/stores/tallas'
 
+// ----- STORE -----
 const tallasStore = useTallasStore()
 
-// Auth
-const email = ref('')
-const password = ref('')
-const autenticado = ref(false)
+// ----- REGISTRO -----
+const registrado = ref(false)
+const submitting = ref(false)
+const serverMsg = ref('')
+const serverOk = ref(false)
 const visitorId = ref('')
-const idAutorizado = '9398492c7d09f97894abd41332fcecd5'
 
-const iniciarSesion = () => {
-  if (email.value === 'admin@gmail.com' && password.value === '123456') {
-    if (visitorId.value !== idAutorizado) {
-      alert(`Este dispositivo no está autorizado.\nTu ID es: ${visitorId.value}`)
+const form = ref({
+  nombre: '',
+  email: '',
+  telefono: '',
+  password: '',
+  password2: '',
+  acepto: false
+})
+
+const errors = ref({ nombre: '', email: '', password: '', password2: '', acepto: '' })
+const showPass = ref(false)
+const showPass2 = ref(false)
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+const canSubmit = computed(() => {
+  return (
+    form.value.nombre.trim().length >= 3 &&
+    emailRegex.test(form.value.email) &&
+    form.value.password.length >= 8 &&
+    form.value.password === form.value.password2 &&
+    form.value.acepto
+  )
+})
+
+function validate() {
+  errors.value = { nombre: '', email: '', password: '', password2: '', acepto: '' }
+  if (form.value.nombre.trim().length < 3) errors.value.nombre = 'Ingresa al menos 3 caracteres.'
+  if (!emailRegex.test(form.value.email)) errors.value.email = 'Correo inválido.'
+  if (form.value.password.length < 8) errors.value.password = 'Mínimo 8 caracteres.'
+  if (form.value.password !== form.value.password2) errors.value.password2 = 'Las contraseñas no coinciden.'
+  if (!form.value.acepto) errors.value.acepto = 'Debes aceptar los términos.'
+  return Object.values(errors.value).every(v => !v)
+}
+
+async function handleRegister() {
+  if (submitting.value) return // evita doble click
+  if (!validate()) return
+
+  submitting.value = true
+  serverMsg.value = ''
+  serverOk.value = false
+
+  const payload = {
+    nombre: form.value.nombre,
+    email: form.value.email,
+    telefono: form.value.telefono || null,
+    password: form.value.password,
+    device_id: visitorId.value
+  }
+
+  try {
+    const { data } = await axios.post('/api/register', payload)
+
+    // Backend normalizado: ok=true en éxitos y en casos idempotentes (429/ya existe)
+    if (data?.ok || data?.message) {
+      serverMsg.value =
+        data?.message || 'Te enviamos un correo de confirmación. Revisa tu bandeja.'
+      serverOk.value = true
+      registrado.value = true
+      localStorage.setItem('registered_email', form.value.email)
       return
     }
-    autenticado.value = true
-  } else {
-    alert('Credenciales incorrectas. Usa: admin@gmail.com / 123456')
+
+    // Si no viene ok, forzamos error para caer al catch
+    throw new Error(data?.message || 'No se pudo completar el registro.')
+  } catch (e) {
+    const status = e.response?.status
+    const body = e.response?.data
+    const errorCode = body?.error?.error_code
+
+    // Si por alguna razón el proxy no normalizó:
+    if (status === 429 && errorCode === 'over_email_send_rate_limit') {
+      serverMsg.value = 'Ya enviamos un correo recientemente. Revisa tu bandeja.'
+      serverOk.value = true
+      registrado.value = true
+      localStorage.setItem('registered_email', form.value.email)
+    } else if (status === 400) {
+      // Podría ser “already registered”
+      const msg =
+        (body?.error_description || body?.msg || body?.message || '').toString().toLowerCase()
+      if (msg.includes('already registered') || msg.includes('user already exists')) {
+        serverMsg.value =
+          'Tu correo ya está registrado. Si no ves el correo, revisa spam o inténtalo más tarde.'
+        serverOk.value = true
+        registrado.value = true
+        localStorage.setItem('registered_email', form.value.email)
+      } else {
+        serverMsg.value = 'Datos inválidos. Revisa tu información e intenta de nuevo.'
+        serverOk.value = false
+      }
+    } else {
+      console.error('API error:', status, body)
+      serverMsg.value = 'Ocurrió un error al registrar. Intenta de nuevo.'
+      serverOk.value = false
+    }
+  } finally {
+    submitting.value = false
   }
 }
 
-// Tallas (store)
+// ----- TALLAS -----
 const nuevaTalla = ref('')
-const handleFormSubmit = () => {
+function handleFormSubmit() {
+  if (!nuevaTalla.value) return
   tallasStore.addTalla(nuevaTalla.value)
   nuevaTalla.value = ''
 }
 
+// ----- FINGERPRINT -----
 onMounted(async () => {
-  const fp = await FingerprintJS.load()
-  const result = await fp.get()
-  visitorId.value = result.visitorId
+  try {
+    const fp = await FingerprintJS.load()
+    const result = await fp.get()
+    visitorId.value = result.visitorId
+  } catch (e) {
+    console.error('FingerprintJS error:', e)
+  }
+
+  // Restaurar si ya estaba registrado en esta máquina
+  const saved = localStorage.getItem('registered_email')
+  if (saved) registrado.value = true
 })
 </script>
 
@@ -210,6 +398,18 @@ onMounted(async () => {
   transform: translateY(-1px);
 }
 
+/* Etiquetas y errores */
+.label { display:block; font-size:.9rem; color:#e5e7eb; margin-bottom:.35rem; }
+.err { color:#fecaca; font-size:.85rem; margin-top:.25rem; }
+.server-msg { margin-top:.75rem; font-size:.9rem; }
+.server-msg.ok { color:#bbf7d0; }
+.server-msg.bad { color:#fecaca; }
+.link { text-decoration: underline; color:#c7d2fe; }
+
+/* Botón mostrar/ocultar password */
+.toggle-eye { position:absolute; right:.5rem; top:50%; transform: translateY(-50%); background:transparent; border:0; font-size:1.15rem; cursor:pointer; }
+.toggle-eye-standalone { margin-top:.35rem; background:transparent; border:0; font-size:1rem; cursor:pointer; color:#e5e7eb; }
+
 /* Botones con gradiente */
 .btn-blue {
   background: linear-gradient(135deg, #60a5fa, #3b82f6);
@@ -219,9 +419,10 @@ onMounted(async () => {
   padding: 12px 18px;
   border: 0;
   letter-spacing: .3px;
-  transition: transform .18s ease, box-shadow .28s ease, filter .2s ease;
+  transition: transform .18s ease, box-shadow .28s ease, filter .2s ease, opacity .2s ease;
 }
-.btn-blue:hover { filter: brightness(1.05); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,.25); }
+.btn-blue[disabled] { opacity:.7; cursor:not-allowed; }
+.btn-blue:hover:not([disabled]) { filter: brightness(1.05); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,.25); }
 
 .btn-primary {
   background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -278,4 +479,7 @@ onMounted(async () => {
 
 /* Checkbox visible en oscuro */
 .check-lg { transform: scale(1.2); accent-color: #60a5fa; }
+
+/* utilidades */
+.field { display:flex; flex-direction:column; }
 </style>

@@ -4,14 +4,6 @@
     <header class="nav-glass sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <h1 class="logo">ModelPro</h1>
-
-        <nav class="flex items-center gap-10">
-          <RouterLink to="/" class="nav-link">Inicio</RouterLink>
-          <RouterLink to="/features" class="nav-link">Características</RouterLink>
-          <RouterLink to="/login" class="btn-blue rounded-full px-6 py-2 font-semibold">
-            Iniciar Sesión
-          </RouterLink>
-        </nav>
       </div>
     </header>
 
@@ -123,7 +115,6 @@
 
 <script setup>
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
 
 const isLoggedIn = ref(false)
 const isPayingUser = ref(false)
@@ -178,25 +169,13 @@ const addComment = () => {
 
 /* ===== Logo con gradiente ===== */
 .logo {
-  font-size: 1.875rem; /* text-3xl */
+  font-size: 1.875rem;
   font-weight: 900;
   letter-spacing: .2px;
   background: linear-gradient(90deg, #f472b6, #fbbf24, #fde68a);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-}
-
-/* ===== Links del nav ===== */
-.nav-link {
-  color: rgba(243, 244, 246, 0.9);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color .2s ease, transform .15s ease;
-}
-.nav-link:hover {
-  color: #fbbf24;
-  transform: translateY(-1px);
 }
 
 /* ===== Cards oscuras estilo glass ===== */
@@ -226,7 +205,7 @@ const addComment = () => {
 
 /* ===== Tipografías auxiliares ===== */
 .hero-title {
-  font-size: 3rem;      /* md:text-5xl */
+  font-size: 3rem;
   font-weight: 900;
   line-height: 1.2;
   margin-bottom: 1rem;
@@ -250,7 +229,7 @@ const addComment = () => {
   border-radius: 14px;
   border: 1px solid #d1d5db;
   background: #f9fafb;
-  color: #000;           /* texto negro */
+  color: #000;
   outline: none;
   transition: box-shadow .2s ease, border-color .2s ease, transform .1s ease;
 }
