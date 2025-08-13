@@ -94,7 +94,7 @@
               show-select
               v-model="selectedProducts"
             >
-              <template v-slot:item.actions="{ item }">
+              <template #item.actions="{ item }">
                 <v-btn
                   icon
                   small
@@ -119,86 +119,110 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { useProductosStore } from '@/stores/productos';
+import { ref, reactive } from 'vue'
+import { useProductosStore } from '@/stores/productos'
+import axios from 'axios'
 
-const productosStore = useProductosStore();
+// La URL de tu API de Laravel, definida en el archivo .env.local de Vue
+const API_URL = import.meta.env.VITE_API_URL
 
-const tiposProducto = ['camisas', 'pantalones', 'chaquetas'];
-const fuentes = ['Adidas 2014 letras negras', 'Nike Blanco', 'Arial Bold'];
+const productosStore = useProductosStore()
+
+const tiposProducto = ['camisas', 'pantalones', 'chaquetas']
+const fuentes = ['Adidas 2014 letras negras', 'Nike Blanco', 'Arial Bold']
 
 const defaultForm = {
   nombre: '',
   tipo: '',
-  diseñoDelante: null,
-  diseñoPosterior: null,
+  disenoDelante: null,
+  disenoPosterior: null,
   modeloDelante: null,
   modeloPosterior: null,
   disenoMangaDer: null,
   disenoMangaIzq: null,
   ptfeLetra: '',
   ptfeNumero: ''
-};
+}
 
-const productForm = ref(null);
-const form = reactive({ ...defaultForm });
-const editingIndex = ref(-1);
-const selectedProducts = ref([]);
-const fileInputs = ref({});
+const productForm = ref(null)
+const form = reactive({ ...defaultForm })
+const editingIndex = ref(-1)
+const selectedProducts = ref([])
+const fileInputs = ref({})
 
 const headers = [
   { title: 'Nombre producto', key: 'nombre' },
   { title: 'Tipo producto', key: 'tipo' },
-];
+]
 const camposAdjuntos = [
-  { label: 'Diseño delante', model: 'diseñoDelante' },
-  { label: 'Diseño posterior', model: 'diseñoPosterior' },
+  { label: 'Diseño delante', model: 'disenoDelante' },
+  { label: 'Diseño posterior', model: 'disenoPosterior' },
   { label: 'Modelo delante', model: 'modeloDelante' },
   { label: 'Modelo posterior', model: 'modeloPosterior' },
   { label: 'Dsg manga der.', model: 'disenoMangaDer' },
   { label: 'Dsg manga izq.', model: 'disenoMangaIzq' }
-];
+]
 
 const handleProductSubmit = async () => {
-  const { valid } = await productForm.value.validate();
-  if (valid) {
-    if (editingIndex.value > -1) {
-      productosStore.updateProduct(editingIndex.value, { ...form });
-    } else {
-      productosStore.addProduct({ ...form });
-    }
-    resetForm();
+  const { valid } = await productForm.value.validate()
+  if (!valid) return
+
+  if (editingIndex.value > -1) {
+    productosStore.updateProduct(editingIndex.value, { ...form })
+    alert('✅ ¡Producto actualizado con éxito!')
+    resetForm()
+    return
   }
-};
+
+  const formData = new FormData()
+  formData.append('nombre', form.nombre)
+  formData.append('tipo', form.tipo)
+  formData.append('ptfeLetra', form.ptfeLetra)
+  formData.append('ptfeNumero', form.ptfeNumero)
+
+  camposAdjuntos.forEach(campo => {
+    if (form[campo.model]) {
+      formData.append(campo.model, form[campo.model])
+    }
+  })
+
+  try {
+    const { data } = await axios.post(`${API_URL}/productos`, formData)
+    console.log('Respuesta del servidor:', data)
+
+    productosStore.addProduct(data.product ?? { ...form })
+    alert('✅ ¡Producto añadido con éxito!')
+    resetForm()
+  } catch (error) {
+    console.error('Error al guardar el producto:', error)
+    alert('❌ Hubo un error al guardar el producto. Revisa la consola para más detalles.')
+  }
+}
 
 const resetForm = () => {
-  Object.assign(form, defaultForm);
-  editingIndex.value = -1;
-  if (productForm.value) {
-    productForm.value.reset();
-  }
-};
+  Object.assign(form, defaultForm)
+  editingIndex.value = -1
+  if (productForm.value) productForm.value.reset()
+}
 
 const editProduct = (event, { item, index }) => {
-  Object.assign(form, { ...item });
-  editingIndex.value = index;
-};
+  Object.assign(form, { ...item })
+  editingIndex.value = index
+}
 
 const handleDeleteSelected = () => {
-  productosStore.deleteSelectedProducts(selectedProducts.value);
-  selectedProducts.value = [];
-};
+  productosStore.deleteSelectedProducts(selectedProducts.value)
+  selectedProducts.value = []
+}
 
 const adjuntarArchivo = (campo) => {
-  fileInputs.value[campo].click();
-};
+  fileInputs.value[campo].click()
+}
 
 const onFileSelected = (event, campo) => {
-  const file = event.target.files[0];
-  if (file) {
-    form[campo] = file;
-  }
-};
+  const file = event.target.files[0]
+  if (file) form[campo] = file
+}
 </script>
 
 <style scoped>
@@ -207,14 +231,12 @@ const onFileSelected = (event, campo) => {
   padding: 64px 16px;
   min-height: 100vh;
 }
-
 .product-card-dark {
   border-radius: 16px;
   background-color: #2c2c3e;
   color: white;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
-
 .product-title-dark {
   background: linear-gradient(45deg, #ff6b6b, #ffa500);
   color: white;
@@ -226,78 +248,27 @@ const onFileSelected = (event, campo) => {
   align-items: center;
   gap: 10px;
 }
-
 .product-field-dark:deep(.v-label),
-.product-field-dark:deep(.v-field__input) {
-  color: #ccc !important;
-  opacity: 1 !important;
-}
-
+.product-field-dark:deep(.v-field__input) { color: #ccc !important; opacity: 1 !important; }
 .product-field-dark:deep(.v-field) {
   background-color: #3e3e57 !important;
   color: white !important;
   border-radius: 8px;
   border: 1px solid #4f4f72;
 }
-
-.product-field-dark:deep(.v-field__outline) {
-  display: none;
-}
-
-.product-field-dark:deep(.v-select__selection) {
-  color: white !important;
-}
-
+.product-field-dark:deep(.v-field__outline) { display: none; }
+.product-field-dark:deep(.v-select__selection) { color: white !important; }
 .product-btn {
-  font-weight: 700;
-  border-radius: 8px;
-  text-transform: none;
-  letter-spacing: 0.5px;
+  font-weight: 700; border-radius: 8px; text-transform: none; letter-spacing: 0.5px;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
-
-.product-btn.v-btn--active {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
-}
-
-.product-table-dark {
-  background-color: #2c2c3e !important;
-  border-radius: 12px;
-}
-
-.product-table-dark:deep(.v-table) {
-  color: white;
-  background-color: #2c2c3e !important;
-}
-
-.product-table-dark:deep(thead) {
-  background-color: #3e3e57 !important;
-  color: white !important;
-}
-
-.product-table-dark:deep(th) {
-  color: white !important;
-  font-weight: bold;
-}
-
-.product-table-dark:deep(tbody tr:hover) {
-  background-color: #3e3e57 !important;
-}
-
-.product-table-dark:deep(tbody tr:hover .v-btn) {
-  opacity: 1 !important;
-}
-
-.product-table-dark:deep(.v-btn) {
-  opacity: 0.8;
-}
-
-.product-table-icon-btn {
-  color: #ef5350;
-}
-
-.text-white {
-  color: white !important;
-}
+.product-btn.v-btn--active { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.25); }
+.product-table-dark { background-color: #2c2c3e !important; border-radius: 12px; }
+.product-table-dark:deep(.v-table) { color: white; background-color: #2c2c3e !important; }
+.product-table-dark:deep(thead) { background-color: #3e3e57 !important; color: white !important; }
+.product-table-dark:deep(th) { color: white !important; font-weight: bold; }
+.product-table-dark:deep(tbody tr:hover) { background-color: #3e3e57 !important; }
+.product-table-dark:deep(tbody tr:hover .v-btn) { opacity: 1 !important; }
+.product-table-icon-btn { color: #ef5350; }
+.text-white { color: white !important; }
 </style>
