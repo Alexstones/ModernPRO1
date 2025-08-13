@@ -1,30 +1,35 @@
+// src/api.js
 import axios from 'axios'
 
-// Usa el proxy de Vite: /api  →  http://127.0.0.1:8000/api
-// Si no existe la env, también cae a /api.
+// Si defines VITE_API_BASE_URL (p.ej. http://127.0.0.1:8000/api), se usa esa.
+// Si no, usamos '/api' para que el proxy de Vite lo redirija al backend.
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-export const api = axios.create({
+// ⚠️ Importante:
+// - Con baseURL = '/api' tus rutas deben ser 'api.post("/fuentes")' (SIN repetir '/api')
+// - Si pones VITE_API_BASE_URL='http://127.0.0.1:8000', entonces sí usarías 'api.post("/api/fuentes")'
+
+const api = axios.create({
   baseURL,
-  withCredentials: false, // ponlo en true SOLO si usas cookies (Sanctum) y ajustas CORS a supports_credentials=true
+  // Ponlo en true SOLO si usas cookies/sesiones (Sanctum) y CORS con credentials.
+  withCredentials: false,
+  headers: {
+    Accept: 'application/json',
+  },
 })
 
-// (Opcional) Token Bearer si usas JWT
-// api.interceptors.request.use((config) => {
-//   const token = localStorage.getItem('token')
-//   if (token) config.headers.Authorization = `Bearer ${token}`
-//   return config
-// })
-
-// (Opcional) logging de errores para depurar
+// Interceptor opcional: log limpio de errores
 api.interceptors.response.use(
   (res) => res,
   (err) => {
+    const status = err.response?.status
+    const data = err.response?.data
+    // Mensaje corto al console para depurar rápido
     console.error('[API ERROR]', {
       url: err.config?.url,
       method: err.config?.method,
-      status: err.response?.status,
-      data: err.response?.data,
+      status,
+      data,
       message: err.message,
     })
     return Promise.reject(err)

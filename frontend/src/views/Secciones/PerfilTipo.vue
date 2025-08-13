@@ -1,7 +1,6 @@
 <template>
   <v-container fluid class="font-manager-container">
     <v-theme-provider theme="dark">
-      <!-- Título -->
       <v-row justify="center" class="mb-6">
         <v-col cols="12" md="10" lg="8">
           <div class="card-dark overflow-hidden">
@@ -17,21 +16,24 @@
         </v-col>
       </v-row>
 
-      <!-- Acciones fuentes -->
       <v-row justify="center" class="mb-4">
         <v-col cols="12" md="10" lg="8" class="d-flex ga-3">
           <v-btn class="btn-primary text-none" variant="flat" rounded="lg" size="large" @click="uploadFuente">
             Subir fuente
           </v-btn>
-          <v-btn class="btn-danger text-none" variant="flat" rounded="lg" size="large"
-                 :disabled="!fuenteSeleccionada?.length"
-                 @click="eliminarFuente">
+          <v-btn
+            class="btn-danger text-none"
+            variant="flat"
+            rounded="lg"
+            size="large"
+            :disabled="!hasFuenteSelected || loading.fuentes"
+            @click="eliminarFuente"
+          >
             Eliminar fuente
           </v-btn>
         </v-col>
       </v-row>
 
-      <!-- Tabla de fuentes -->
       <v-row justify="center" class="mb-8">
         <v-col cols="12" md="10" lg="8">
           <div class="card-dark overflow-hidden">
@@ -42,30 +44,117 @@
             <div class="table-wrapper">
               <v-data-table
                 v-model="fuenteSeleccionada"
+                :return-object="true"
                 show-select
                 :headers="headersFuente"
                 :items="fuentes"
+                :loading="loading.fuentes"
                 item-value="id"
                 density="comfortable"
                 class="table-dark elevation-8"
-              />
+              >
+                <template #item.url="{ item }">
+                  <a v-if="item.url" :href="item.url" target="_blank" rel="noopener noreferrer">Abrir</a>
+                  <span v-else>—</span>
+                </template>
+                <template #item.created_at="{ item }">
+                  <span>{{ formatDate(item.created_at) }}</span>
+                </template>
+              </v-data-table>
             </div>
           </div>
         </v-col>
       </v-row>
 
-      <!-- Acciones perfiles -->
+      <v-row justify="center" class="mb-6">
+        <v-col cols="12" md="10" lg="8">
+          <div class="card-dark overflow-hidden">
+            <div class="card-subtitle">
+              <v-icon size="20" class="mr-2">mdi-plus-box</v-icon>
+              Crear perfil
+            </div>
+            <div class="p-4 d-flex flex-column ga-4">
+              <v-text-field
+                v-model="nuevoPerfil.perfil"
+                label="Nombre del perfil"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                required
+              />
+              <v-select
+                v-model="nuevoPerfil.fuente_id"
+                :items="fuenteOptions"
+                label="Fuente"
+                item-title="title"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                :disabled="!fuentes.length"
+                required
+              />
+              <v-text-field
+                v-model.number="nuevoPerfil.cont"
+                type="number"
+                label="Cont (opcional)"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                min="0"
+              />
+              <v-text-field
+                v-model="nuevoPerfil.letra_dir"
+                label="Dir Letra (opcional)"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                placeholder="p. ej. letras/camiseta"
+              />
+              <v-text-field
+                v-model="nuevoPerfil.contorno_dir"
+                label="Dir Contorno (opcional)"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                placeholder="p. ej. contornos/camiseta"
+              />
+              <div class="d-flex ga-3">
+                <v-btn
+                  class="btn-primary text-none"
+                  :loading="loading.crearPerfil"
+                  :disabled="!puedeCrearPerfil"
+                  @click="crearPerfil"
+                >
+                  Guardar perfil
+                </v-btn>
+                <v-btn variant="tonal" class="text-none" @click="resetPerfilForm">
+                  Limpiar
+                </v-btn>
+              </div>
+              <small class="text-gray-300">
+                * Se enviarán <code>perfil</code>, <code>cont</code>, <code>fuente_id</code>, <code>letra_dir</code> y <code>contorno_dir</code>.
+              </small>
+            </div>
+          </div>
+        </v-col>
+      </v-row>
+
       <v-row justify="center" class="mb-2">
         <v-col cols="12" md="10" lg="8" class="d-flex">
-          <v-btn class="btn-danger text-none" variant="flat" rounded="lg" size="large"
-                 :disabled="!perfilSeleccionado?.length"
-                 @click="eliminarPerfil">
+          <v-btn
+            class="btn-danger text-none"
+            variant="flat"
+            rounded="lg"
+            size="large"
+            :disabled="!hasPerfilSelected || loading.perfiles"
+            @click="eliminarPerfil"
+          >
             Eliminar perfil de fuente
           </v-btn>
         </v-col>
       </v-row>
 
-      <!-- Tabla de perfiles -->
       <v-row justify="center">
         <v-col cols="12" md="10" lg="8">
           <div class="card-dark overflow-hidden">
@@ -76,31 +165,45 @@
             <div class="table-wrapper">
               <v-data-table
                 v-model="perfilSeleccionado"
+                :return-object="true"
                 show-select
                 :headers="headersPerfil"
                 :items="perfiles"
+                :loading="loading.perfiles"
                 item-value="id"
                 density="comfortable"
                 class="table-dark elevation-8"
-              />
+              >
+                <template #item.letra="{ item }">
+                  <a v-if="item.letra" :href="item.letra" target="_blank" rel="noopener noreferrer">Ver</a>
+                  <span v-else>—</span>
+                </template>
+                <template #item.contorno="{ item }">
+                  <a v-if="item.contorno" :href="item.contorno" target="_blank" rel="noopener noreferrer">Ver</a>
+                  <span v-else>—</span>
+                </template>
+              </v-data-table>
             </div>
           </div>
         </v-col>
       </v-row>
 
-      <!-- Input oculto (realmente oculto) -->
       <input ref="fileInput" type="file" accept=".ttf,.otf" style="display:none" @change="handleFile" />
     </v-theme-provider>
   </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, computed } from 'vue'
+import api from '@/services/api.js'
+
+const FILE_FIELD_NAME = 'fuente'
 
 const headersFuente = [
   { title: 'Nombre Fuente', key: 'nombre' },
-  { title: 'Path Fuente', key: 'path' }
+  { title: 'Path', key: 'path' },
+  { title: 'URL', key: 'url' },
+  { title: 'Creado', key: 'created_at' },
 ]
 
 const headersPerfil = [
@@ -108,7 +211,7 @@ const headersPerfil = [
   { title: 'Fuente', key: 'fuente' },
   { title: 'Cont', key: 'cont' },
   { title: 'Dir Letra', key: 'letra' },
-  { title: 'Dir Contorno', key: 'contorno' }
+  { title: 'Dir Contorno', key: 'contorno' },
 ]
 
 const fuentes = ref([])
@@ -118,74 +221,148 @@ const fuenteSeleccionada = ref([])
 const perfilSeleccionado = ref([])
 
 const fileInput = ref(null)
+const loading = ref({ fuentes: false, perfiles: false, crearPerfil: false })
+
+const nuevoPerfil = ref({
+  perfil: '',
+  fuente_id: null,
+  cont: null,
+  letra_dir: '',
+  contorno_dir: '',
+})
+
+const fuenteOptions = computed(() => fuentes.value.map(f => ({ title: f.nombre, value: f.id })))
+const puedeCrearPerfil = computed(() => !!nuevoPerfil.value.perfil && !!nuevoPerfil.value.fuente_id)
+
+const hasFuenteSelected = computed(() => fuenteSeleccionada.value.length > 0)
+const hasPerfilSelected = computed(() => perfilSeleccionado.value.length > 0)
+
+const resetPerfilForm = () => {
+  nuevoPerfil.value = { perfil: '', fuente_id: null, cont: null, letra_dir: '', contorno_dir: '' }
+}
+
+const showApiError = (err, fallback = 'Ocurrió un error') => {
+  const msg =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    fallback
+  alert(msg)
+}
+
+const formatDate = dt => {
+  if (!dt) return '—'
+  try {
+    const d = new Date(dt)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleString()
+  } catch { return '—' }
+}
 
 const fetchFuentes = async () => {
-  const res = await axios.get('/api/fuentes')
-  fuentes.value = res.data
+  loading.value.fuentes = true
+  try {
+    const res = await api.get('/fuentes')
+    fuentes.value = Array.isArray(res.data) ? res.data : []
+  } catch (err) {
+    console.error('fetchFuentes()', err)
+    showApiError(err, 'No se pudieron cargar las fuentes.')
+  } finally {
+    loading.value.fuentes = false
+  }
 }
 
 const fetchPerfiles = async () => {
-  const res = await axios.get('/api/perfiles')
-  perfiles.value = res.data
+  loading.value.perfiles = true
+  try {
+    const res = await api.get('/perfiles')
+    perfiles.value = Array.isArray(res.data) ? res.data : []
+  } catch (err) {
+    console.error('fetchPerfiles()', err)
+    showApiError(err, 'No se pudieron cargar los perfiles.')
+  } finally {
+    loading.value.perfiles = false
+  }
 }
 
-const uploadFuente = () => {
-  fileInput.value?.click()
-}
+const uploadFuente = () => fileInput.value?.click()
 
 const handleFile = async (event) => {
-  const file = event.target.files?.[0]
+  const file = event.target?.files?.[0]
   if (!file) return
-
+  const ok = /\.ttf$|\.otf$/i.test(file.name)
+  if (!ok) {
+    alert('Selecciona un archivo .ttf o .otf')
+    if (fileInput.value) fileInput.value.value = ''
+    return
+  }
   const formData = new FormData()
-  formData.append('fuente', file)
-
+  formData.append(FILE_FIELD_NAME, file)
   try {
-    await axios.post('/api/fuentes', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    await api.post('/fuentes', formData)
     await fetchFuentes()
   } catch (err) {
     console.error('Error subiendo fuente:', err)
-    alert('Error al subir fuente.')
+    showApiError(err, 'Error al subir la fuente.')
+  } finally {
+    if (fileInput.value) fileInput.value.value = ''
   }
-
-  if (fileInput.value) fileInput.value.value = ''
 }
 
 const eliminarFuente = async () => {
-  if (!fuenteSeleccionada.value.length) return
-  const id = fuenteSeleccionada.value[0].id
-  if (!confirm('¿Eliminar esta fuente?')) return
+  const ids = fuenteSeleccionada.value.map(f => f.id)
+  if (!ids.length) return
+  if (!confirm(`¿Eliminar ${ids.length} fuente(s)?`)) return
 
   try {
-    await axios.delete(`/api/fuentes/${id}`)
+    await Promise.all(ids.map(id => api.delete(`/fuentes/${id}`)))
     await fetchFuentes()
     fuenteSeleccionada.value = []
   } catch (err) {
     console.error('Error eliminando fuente:', err)
-    alert('Error al eliminar fuente.')
+    showApiError(err, 'Error al eliminar la(s) fuente(s).')
   }
 }
 
 const eliminarPerfil = async () => {
-  if (!perfilSeleccionado.value.length) return
-  const id = perfilSeleccionado.value[0].id
-  if (!confirm('¿Eliminar este perfil de fuente?')) return
+  const ids = perfilSeleccionado.value.map(p => p.id)
+  if (!ids.length) return
+  if (!confirm(`¿Eliminar ${ids.length} perfil(es)?`)) return
 
   try {
-    await axios.delete(`/api/perfiles/${id}`)
+    await Promise.all(ids.map(id => api.delete(`/perfiles/${id}`)))
     await fetchPerfiles()
     perfilSeleccionado.value = []
   } catch (err) {
     console.error('Error eliminando perfil:', err)
-    alert('Error al eliminar perfil.')
+    showApiError(err, 'Error al eliminar el/los perfil(es).')
   }
 }
 
-onMounted(() => {
-  fetchFuentes()
-  fetchPerfiles()
+const crearPerfil = async () => {
+  if (!puedeCrearPerfil.value) return
+  loading.value.crearPerfil = true
+  try {
+    const payload = {
+      perfil: nuevoPerfil.value.perfil,
+      cont: nuevoPerfil.value.cont ?? null,
+      fuente_id: nuevoPerfil.value.fuente_id,
+      letra_dir: nuevoPerfil.value.letra_dir || null,
+      contorno_dir: nuevoPerfil.value.contorno_dir || null,
+    }
+    await api.post('/perfiles', payload)
+    resetPerfilForm()
+    await fetchPerfiles()
+  } catch (err) {
+    console.error('crearPerfil()', err)
+    showApiError(err, 'No se pudo crear el perfil.')
+  } finally {
+    loading.value.crearPerfil = false
+  }
+}
+
+onMounted(async () => {
+  await fetchFuentes()
+  await fetchPerfiles()
 })
 </script>
 
@@ -250,9 +427,7 @@ onMounted(() => {
 }
 
 /* Wrapper de tablas */
-.table-wrapper {
-  padding: 10px 12px 16px;
-}
+.table-wrapper { padding: 10px 12px 16px; }
 
 /* Estilo oscuro para v-data-table (Vuetify 3) */
 .table-dark :deep(.v-table) {

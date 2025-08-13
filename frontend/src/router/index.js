@@ -1,3 +1,4 @@
+// src/router/index.js
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 const routes = [
@@ -8,9 +9,11 @@ const routes = [
     component: () => import('../views/Home.vue'),
     meta: { label: 'Inicio' }
   },
+
   // Raíz redirige a /home
   { path: '/', redirect: { name: 'home' } },
 
+  // Secciones
   { path: '/clientes', name: 'clientes', component: () => import('../views/Secciones/Clientes.vue') },
   { path: '/generar',  name: 'generar',  component: () => import('../views/Secciones/GenerarPDF.vue') },
   { path: '/perfil',   name: 'perfilProducto', component: () => import('../views/Secciones/Perfil.vue') },
@@ -48,18 +51,27 @@ const router = createRouter({
  *   http://localhost:5173/#access_token=...      (no empieza con "#/")
  *   http://localhost:5173/#type=recovery&...     (recuperación)
  * Con hash history, el router espera "#/ruta". Si no hay "/",
- * interpretamos esos parámetros y redirigimos a la vista adecuada.
+ * interpretamos esos parámetros y redirigimos a la vista adecuada
+ * **preservando** los params como query (para que tus componentes puedan leerlos).
  */
 router.beforeEach((to, from, next) => {
+  // Evitar loop si ya estamos en las rutas objetivo
+  if (to.name === 'Confirmacion' || to.name === 'resetPassword') return next()
+
   const raw = window.location.hash || '' // e.g. "#access_token=..."
   if (raw && !raw.startsWith('#/')) {
     const params = new URLSearchParams(raw.slice(1))
     const access = params.get('access_token')
     const type = params.get('type')
-    if (access) {
-      return next({ name: type === 'recovery' ? 'resetPassword' : 'Confirmacion' })
+
+    if (access || type) {
+      const target = type === 'recovery' ? 'resetPassword' : 'Confirmacion'
+      // pasamos TODO el fragmento como query para no perder datos
+      const query = Object.fromEntries(params.entries())
+      return next({ name: target, query })
     }
   }
+
   return next()
 })
 
