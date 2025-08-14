@@ -1,0 +1,26 @@
+*.sqlite*
+
+# Bases de datos sqlite
+*.sqlite*
+
+# --- SO / IDE ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Node (monorepo) ---
+**/node_modules/
+**/.next/
+**/.nuxt/
+**/.vite/
+**/dist/
+**/build/
+
+# --- Variables de entorno en la raíz (si existieran) ---
+.env
+.env.*
+
+# --- Backup local (para no subirlo por accidente) ---
+backend_bak/
+

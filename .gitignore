@@ -1,4 +1,19 @@
-/backend/vendor
-/backend/node_modules
-/frontend/node_modules
+# --- SO / IDE ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# --- Bases de datos (manteniendo tu regla) ---
+*.sqlite*
+
+# --- Node (monorepo) ---
+**/node_modules/
+**/.next/
+**/.nuxt/
+**/.vite/
+**/dist/
+**/build/
+
+# --- Variables de entorno (si usas en la raíz) ---
 .env
+.env.*
