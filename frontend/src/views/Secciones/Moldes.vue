@@ -8,7 +8,7 @@
         </div>
         <div class="p-6">
           <p class="text-gray-200 text-lg m-0">
-            Sube los moldes del conjunto: camiseta (izquierda/derecha), short (izquierda/derecha), mangas (izquierda/derecha)
+            Sube los moldes del conjunto: camiseta (frente/espalda), short (izquierda/derecha), mangas (izquierda/derecha)
           </p>
         </div>
       </div>
@@ -21,29 +21,69 @@
           </div>
 
           <div class="p-6">
-            <div class="mb-6">
-              <label class="block mb-2 text-lg font-medium text-white">Nombre del conjunto</label>
-              <input
-                v-model="molde.nombre"
-                placeholder="Ej. Set CAMISETA 701"
-                class="product-input w-full"
-              />
+            <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- Nombre del conjunto -->
+              <div class="md:col-span-2">
+                <label class="block mb-2 text-lg font-medium text-white">Nombre del conjunto</label>
+                <input
+                  v-model="molde.nombre"
+                  placeholder="Ej. Set CAMISETA 701"
+                  class="product-input w-full"
+                />
+              </div>
+
+              <!-- Talla para auto-mapeo -->
+              <div>
+                <label class="block mb-2 text-lg font-medium text-white">Talla</label>
+                <input
+                  v-model="tallaAuto"
+                  inputmode="numeric"
+                  placeholder="8"
+                  class="product-input w-full"
+                />
+              </div>
             </div>
 
-            <!-- Campos de archivo -->
+            <!-- Atajo: cargar carpeta y auto-asignar por talla -->
+            <div class="mb-6">
+              <input
+                ref="dirInput"
+                type="file"
+                style="display:none"
+                webkitdirectory
+                directory
+                multiple
+                accept=".svg,.png,.jpg,.jpeg,.pdf"
+                @change="handleFolder"
+              />
+              <button class="product-btn-secondary" @click="openFolderPicker" :disabled="uploading">
+                Cargar carpeta (moldería de esta talla)
+              </button>
+              <p class="text-sm text-gray-300 mt-2">
+                Elige la <span class="font-semibold">carpeta</span> que contiene los archivos. Intentaremos asignarlos
+                automáticamente a cada pieza según el nombre y la talla (ej. <code>...T8...</code>, <code>_8_</code>, <code>-8</code>, <code>t8</code>).
+              </p>
+              <p v-if="autoMapMsg" class="text-sm mt-1" :class="autoMapOk ? 'text-green-300' : 'text-yellow-300'">
+                {{ autoMapMsg }}
+              </p>
+            </div>
+
+            <!-- Campos de archivo (edición manual si quieres cambiar alguno) -->
             <div class="grid grid-cols-1 gap-4">
               <div v-for="(campo, index) in camposArchivo" :key="index" class="flex flex-col gap-2">
                 <label class="text-white font-medium">{{ campo.label }}</label>
                 <div class="flex items-center gap-2">
                   <input
                     type="file"
-                    class="hidden"
+                    accept=".svg,.png,.jpg,.jpeg,.pdf"
+                    style="display:none"
                     @change="handleFileUpload($event, campo.key)"
                     :id="'file-'+campo.key"
                   />
                   <label
                     :for="'file-'+campo.key"
                     class="product-input flex-1 cursor-pointer truncate"
+                    :title="molde.archivos[campo.key]?.name || 'Elegir archivo'"
                   >
                     {{ molde.archivos[campo.key]?.name || 'Elegir archivo' }}
                   </label>
@@ -60,18 +100,33 @@
               </div>
             </div>
 
+            <!-- Progreso de subida -->
+            <div v-if="uploading" class="mt-6 text-sm text-gray-200">
+              Subiendo…
+              <div class="w-full bg-gray-700 rounded h-2 mt-2 overflow-hidden">
+                <div
+                  class="bg-green-500 h-2 transition-all"
+                  :style="{ width: (progress === null ? '100%' : Math.round(progress) + '%') }"
+                ></div>
+              </div>
+              <div v-if="progress !== null" class="mt-1">{{ Math.round(progress) }}%</div>
+            </div>
+
             <!-- Botones -->
             <div class="flex gap-3 mt-8 justify-end">
-              <button @click="limpiarCampos" class="product-btn-secondary">Limpiar Campos</button>
-              <button @click="addMolde" class="product-btn-primary">Guardar Moldes</button>
+              <button @click="limpiarCampos" class="product-btn-secondary" :disabled="uploading">Limpiar Campos</button>
+              <button @click="addMolde" class="product-btn-primary" :disabled="uploading || !isValidNombre || !alMenosUnArchivo">
+                {{ uploading ? 'Guardando…' : 'Guardar Moldes' }}
+              </button>
             </div>
           </div>
         </div>
 
         <!-- Card: Tabla -->
         <div class="product-card-dark overflow-hidden">
-          <div class="product-title-dark">
+          <div class="product-title-dark flex items-center justify-between">
             <h2 class="text-h5 text-white m-0">Moldes Registrados</h2>
+            <span v-if="store.loading" class="text-sm text-gray-200">Cargando…</span>
           </div>
 
           <div class="p-0">
@@ -99,7 +154,7 @@
                     </td>
                   </tr>
 
-                  <tr v-for="(item, index) in moldes" :key="index">
+                  <tr v-for="(item, index) in moldes" :key="item.id || index">
                     <td class="px-6 py-4 font-semibold text-white">{{ item.nombre }}</td>
 
                     <td class="px-6 py-4">
@@ -147,29 +202,131 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useMoldesStore } from '@/stores/moldes'
 
 const camposArchivo = [
-  { key: 'camiseta_frente', label: 'Molde Camiseta frente' },
+  { key: 'camiseta_frente',  label: 'Molde Camiseta frente' },
   { key: 'camiseta_espalda', label: 'Molde Camiseta espalda' },
-  { key: 'short_izq', label: 'Molde Short Izquierda' },
-  { key: 'short_der', label: 'Molde Short Derecha' },
-  { key: 'manga_izq', label: 'Molde Manga Izquierda' },
-  { key: 'manga_der', label: 'Molde Manga Derecha' }
+  { key: 'short_izq',        label: 'Molde Short Izquierda' },
+  { key: 'short_der',        label: 'Molde Short Derecha' },
+  { key: 'manga_izq',        label: 'Molde Manga Izquierda' },
+  { key: 'manga_der',        label: 'Molde Manga Derecha' }
 ]
+
+const store = useMoldesStore()
 
 const molde = ref({
   nombre: '',
   archivos: Object.fromEntries(camposArchivo.map(c => [c.key, null]))
 })
 
-const moldes = ref([])
+const tallaAuto   = ref('')     // ej. "8"
+const dirInput    = ref(null)
+const uploading   = ref(false)
+const progress    = ref(null)   // null = indeterminado
+const autoMapMsg  = ref('')
+const autoMapOk   = ref(false)
 
-const handleFileUpload = (event, campo) => {
-  const file = event.target.files[0]
-  if (file) {
-    molde.value.archivos[campo] = file
+const moldes = computed(() => store.items)
+const isValidNombre = computed(() => (molde.value.nombre || '').trim().length > 0)
+const alMenosUnArchivo = computed(() => Object.values(molde.value.archivos).some(f => !!f))
+
+// === Cargar carpeta completa y auto-mapear por talla ===
+const openFolderPicker = () => dirInput.value?.click?.()
+
+const handleFolder = (e) => {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+
+  const talla = (tallaAuto.value || '').toString().trim()
+  const asignadas = autoMapFromFolder(files, talla)
+
+  const keys = Object.keys(asignadas).filter(k => asignadas[k])
+  const faltantes = camposArchivo.map(c => c.key).filter(k => !asignadas[k])
+
+  // asignar al estado
+  for (const k of keys) molde.value.archivos[k] = asignadas[k]
+
+  // si no hay nombre y se detectó carpeta, sugerir uno
+  if (!molde.value.nombre && files[0].webkitRelativePath) {
+    const parts = files[0].webkitRelativePath.split('/')
+    const carpeta = parts.length > 1 ? parts[parts.length - 2] : 'Conjunto'
+    molde.value.nombre = `${carpeta}${talla ? ` - T${talla}` : ''}`
   }
+
+  // mensaje
+  if (keys.length) {
+    autoMapOk.value = faltantes.length === 0
+    autoMapMsg.value = `Asignados: ${keys.length}/6. ${faltantes.length ? `Faltan: ${faltantes.join(', ')}` : '¡Todo listo!'}`
+  } else {
+    autoMapOk.value = false
+    autoMapMsg.value = 'No se encontraron archivos que coincidan con esta talla o patrones. Revisa los nombres o sube manualmente.'
+  }
+
+  // limpia input carpeta para permitir re-selección
+  e.target.value = ''
+}
+
+function autoMapFromFolder(files, talla) {
+  const allowed = /\.(svg|png|jpe?g|pdf)$/i
+  const clean = (s) => (s || '').toLowerCase()
+
+  const patterns = {
+    camiseta_frente:  [/(camiseta|playera|remera).*(frente|front)/i, /(frente|front).*?(camiseta|playera|remera)/i],
+    camiseta_espalda: [/(camiseta|playera|remera).*(espalda|back)/i, /(espalda|back).*?(camiseta|playera|remera)/i],
+    short_izq:        [/(short|pantal(o|ó)n|bermuda|shorts).*?(izq|left)/i],
+    short_der:        [/(short|pantal(o|ó)n|bermuda|shorts).*?(der|right)/i],
+    manga_izq:        [/(manga).*?(izq|left)/i],
+    manga_der:        [/(manga).*?(der|right)/i]
+  }
+
+  const tallaRegex = talla
+    ? new RegExp(`(^|[^a-z0-9])(?:t(?:alla)?\\s*)?${talla}(?=[^a-z0-9]|$)`, 'i')
+    : null
+
+  // score por archivo y campo
+  const scoreFor = (name, field) => {
+    let s = 0
+    for (const rx of patterns[field]) if (rx.test(name)) { s += 100; break }
+    if (tallaRegex && tallaRegex.test(name)) s += 50
+    // bonus por palabras típicas
+    if (/frente|front|espalda|back|izq|left|der|right|manga|short|camiseta|playera|remera/.test(name)) s += 10
+    return s
+  }
+
+  // elegir mejor candidato por campo
+  const out = Object.fromEntries(Object.keys(patterns).map(k => [k, null]))
+  const used = new Set()
+
+  const candidates = files
+    .filter(f => allowed.test(f.name))
+    .map(f => ({ file: f, name: clean(f.name) }))
+
+  for (const field of Object.keys(patterns)) {
+    let best = null
+    let bestScore = 0
+    for (const c of candidates) {
+      if (used.has(c.file)) continue
+      const sc = scoreFor(c.name, field)
+      if (sc > bestScore) { best = c.file; bestScore = sc }
+    }
+    if (best) { out[field] = best; used.add(best) }
+  }
+
+  return out
+}
+
+// === Manejo manual por archivo ===
+const handleFileUpload = (event, campo) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  if (!/\.(svg|png|jpe?g|pdf)$/i.test(file.name)) {
+    alert('Formato no permitido. Usa SVG/PNG/JPG/PDF.')
+    event.target.value = ''
+    return
+  }
+  molde.value.archivos[campo] = file
 }
 
 const removeFile = (campo) => {
@@ -178,36 +335,50 @@ const removeFile = (campo) => {
   if (el) el.value = ''
 }
 
-const generarUrl = (archivo) => {
-  if (!archivo) return null
-  return {
-    name: archivo.name,
-    url: URL.createObjectURL(archivo)
-  }
-}
-
-const addMolde = () => {
-  if (!molde.value.nombre.trim()) {
+// === Guardado ===
+const addMolde = async () => {
+  const nombre = (molde.value.nombre || '').trim()
+  if (!nombre) {
     alert('Debes ingresar un nombre para el conjunto')
     return
   }
-
-  const nuevoMolde = {
-    nombre: molde.value.nombre,
-    camiseta_frente: generarUrl(molde.value.archivos.camiseta_frente),
-    camiseta_espalda: generarUrl(molde.value.archivos.camiseta_espalda),
-    short_izq: generarUrl(molde.value.archivos.short_izq),
-    short_der: generarUrl(molde.value.archivos.short_der),
-    manga_izq: generarUrl(molde.value.archivos.manga_izq),
-    manga_der: generarUrl(molde.value.archivos.manga_der)
+  if (!alMenosUnArchivo.value) {
+    alert('Agrega al menos un archivo (o usa la carga por carpeta).')
+    return
   }
 
-  moldes.value.unshift(nuevoMolde)
-  limpiarCampos()
+  uploading.value = true
+  progress.value   = 0
+  try {
+    await store.addOne({
+      nombre,
+      archivos: molde.value.archivos
+    }, (evt) => {
+      if (evt?.total) progress.value = (evt.loaded / evt.total) * 100
+      else progress.value = null
+    })
+    limpiarCampos()
+    autoMapMsg.value = ''
+  } catch (e) {
+    console.error('addMolde error:', e)
+    const msg = e?.response?.data?.message || e.message || 'No se pudo guardar los moldes.'
+    alert('❌ ' + msg)
+  } finally {
+    uploading.value = false
+    progress.value = null
+  }
 }
 
-const eliminarMolde = (index) => {
-  moldes.value.splice(index, 1)
+const eliminarMolde = async (indexOrId) => {
+  const item = store.items[indexOrId]
+  if (!item) return
+  if (!confirm(`¿Eliminar el conjunto "${item.nombre}"?`)) return
+  try {
+    await store.deleteOne(item.id)
+  } catch (e) {
+    console.error(e)
+    alert('No se pudo eliminar. Revisa el servidor.')
+  }
 }
 
 const limpiarCampos = () => {
@@ -215,7 +386,16 @@ const limpiarCampos = () => {
     nombre: '',
     archivos: Object.fromEntries(camposArchivo.map(c => [c.key, null]))
   }
+  // Limpia inputs file del DOM
+  camposArchivo.forEach(c => {
+    const el = document.getElementById(`file-${c.key}`)
+    if (el) el.value = ''
+  })
 }
+
+onMounted(() => {
+  store.fetchAll()
+})
 </script>
 
 <style scoped>
@@ -289,7 +469,7 @@ const limpiarCampos = () => {
 }
 
 .product-btn-secondary {
-  background: linear-gradient(135deg, #ec4899, #db2777);
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
   color: white;
   font-weight: 800;
   border-radius: 10px;

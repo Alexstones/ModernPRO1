@@ -38,6 +38,7 @@
                 v-model.number="talla.ancho"
                 type="number"
                 min="0"
+                step="0.01"
                 placeholder="Ancho (cm)"
                 class="product-input w-full"
                 required
@@ -47,6 +48,7 @@
                 v-model.number="talla.alto"
                 type="number"
                 min="0"
+                step="0.01"
                 placeholder="Alto (cm)"
                 class="product-input w-full"
                 required
@@ -62,8 +64,13 @@
 
         <!-- Card: Tabla -->
         <div class="card-dark overflow-hidden">
-          <div class="card-subtitle">
+          <div class="card-subtitle flex items-center justify-between">
             <span class="font-bold">Tallas registradas</span>
+
+            <!-- Guardar todo -->
+            <button class="btn-secondary" :disabled="guardandoTodo" @click="guardarTodo">
+              {{ guardandoTodo ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
           </div>
 
           <div class="p-0">
@@ -78,18 +85,62 @@
                     <th>Acciones</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   <tr v-if="tallasStore.tallas.length === 0">
-                    <td colspan="5" class="text-center py-6 text-gray-300">No hay tallas registradas aún.</td>
+                    <td colspan="5" class="text-center py-6 text-gray-300">
+                      No hay tallas registradas aún.
+                    </td>
                   </tr>
 
                   <tr v-for="item in tallasStore.tallas" :key="item.id">
                     <td>{{ item.categoria }}</td>
                     <td>{{ item.talle }}</td>
-                    <td>{{ item.ancho }} cm</td>
-                    <td>{{ item.alto }} cm</td>
+
+                    <!-- ✅ Editable: ANCHO -->
                     <td>
-                      <button class="btn-danger" @click="tallasStore.eliminarTalla(item.id)">Eliminar</button>
+                      <div class="flex items-center gap-2">
+                        <input
+                          v-model.number="item.ancho"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          class="product-input w-full"
+                          @keydown.enter.prevent="guardarFila(item)"
+                          @blur="guardarFila(item)"
+                        />
+                        <small class="text-gray-400">cm</small>
+                      </div>
+                    </td>
+
+                    <!-- ✅ Editable: ALTO -->
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <input
+                          v-model.number="item.alto"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          class="product-input w-full"
+                          @keydown.enter.prevent="guardarFila(item)"
+                          @blur="guardarFila(item)"
+                        />
+                        <small class="text-gray-400">cm</small>
+                      </div>
+                    </td>
+
+                    <td class="flex gap-2 justify-center">
+                      <button
+                        class="btn-primary"
+                        :disabled="guardandoFila[item.id] === true"
+                        @click="guardarFila(item)"
+                      >
+                        {{ guardandoFila[item.id] ? 'Guardando…' : 'Guardar' }}
+                      </button>
+
+                      <button class="btn-danger" @click="tallasStore.eliminarTalla(item.id)">
+                        Eliminar
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -119,6 +170,9 @@ const talla = ref({
   alto: ''
 })
 
+const guardandoFila = ref({})   // mapa { [id]: true|false }
+const guardandoTodo = ref(false)
+
 const handleFormSubmit = async () => {
   await tallasStore.addTalla({ ...talla.value })
   limpiarCampos()
@@ -126,6 +180,53 @@ const handleFormSubmit = async () => {
 
 const limpiarCampos = () => {
   talla.value = { categoria: '', talle: '', ancho: '', alto: '' }
+}
+
+const guardarFila = async (item) => {
+  // Evitar guardados concurrentes de la misma fila
+  if (guardandoFila.value[item.id]) return
+  guardandoFila.value[item.id] = true
+  try {
+    await tallasStore.updateTalla(item.id, {
+      ancho: Number(item.ancho ?? 0),
+      alto:  Number(item.alto ?? 0),
+    })
+  } catch (e) {
+    console.error(e)
+    alert('No se pudo guardar la fila. Revisa el servidor.')
+  } finally {
+    guardandoFila.value[item.id] = false
+  }
+}
+
+const guardarTodo = async () => {
+  if (guardandoTodo.value) return
+  guardandoTodo.value = true
+  try {
+    // Si existe bulkUpdate en tu store, úsalo
+    if (typeof tallasStore.bulkUpdate === 'function') {
+      const items = tallasStore.tallas.map(t => ({
+        id: t.id,
+        ancho: Number(t.ancho ?? 0),
+        alto:  Number(t.alto ?? 0),
+      }))
+      await tallasStore.bulkUpdate(items)
+    } else {
+      // Fallback: actualizar una por una
+      for (const t of tallasStore.tallas) {
+        await tallasStore.updateTalla(t.id, {
+          ancho: Number(t.ancho ?? 0),
+          alto:  Number(t.alto ?? 0),
+        })
+      }
+    }
+    alert('Cambios guardados ✅')
+  } catch (e) {
+    console.error(e)
+    alert('No se pudieron guardar todos los cambios.')
+  } finally {
+    guardandoTodo.value = false
+  }
 }
 
 onMounted(() => {
@@ -173,9 +274,9 @@ onMounted(() => {
 
 /* Inputs con texto negro y buen contraste */
 .product-input {
-  background-color: #f9fafb;       /* fondo claro */
+  background-color: #f9fafb;
   border: 1px solid #d1d5db;
-  color: #000 !important;          /* texto negro */
+  color: #000 !important;
   border-radius: 10px;
   padding: 12px 14px;
   outline: none;
