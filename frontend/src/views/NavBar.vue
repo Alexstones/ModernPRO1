@@ -14,6 +14,7 @@
 
       <v-divider vertical class="mx-4" />
 
+      <!-- ✅ Links principales -->
       <router-link to="/home" class="nav-link" aria-label="Ir a Inicio">
         <v-btn text class="nav-btn">Inicio</v-btn>
       </router-link>
@@ -50,10 +51,15 @@
       <router-link to="/config" class="nav-link" aria-label="Ir a Configuración">
         <v-btn text class="nav-btn">Config</v-btn>
       </router-link>
+
+      <!-- ✅ Nueva pestaña Diseño -->
+      <router-link to="/diseno" class="nav-link" aria-label="Ir a Diseño">
+        <v-btn text class="nav-btn">Diseño</v-btn>
+      </router-link>
     </v-card>
   </v-app-bar>
 
-  <!-- (Opcional) Mobile: puedes poner aquí un menú hamburguesa o nada -->
+  <!-- Mobile -->
   <v-app-bar
     v-else
     height="64"
@@ -137,4 +143,3 @@ const isDesktop = computed(() => width.value > 700)
   font-weight: 700;
 }
 </style>
-

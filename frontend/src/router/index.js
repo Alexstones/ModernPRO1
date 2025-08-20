@@ -19,20 +19,25 @@ const routes = [
   { path: '/perfil',   name: 'perfilProducto', component: () => import('../views/Secciones/Perfil.vue') },
   { path: '/moldes',   name: 'moldes',   component: () => import('../views/Secciones/Moldes.vue') },
 
-  // ✅ NUEVO: Moldería
+  // ✅ Moldería
   {
     path: '/molderia',
     name: 'molderia',
-    // Opción A: si tienes la vista creada:
     component: () => import('../views/Secciones/Molderia.vue'),
-    // Opción B (alternativa): usar el componente que te compartí
-    // component: () => import('@/components/MolderiaDesign.vue'),
     meta: { label: 'Moldería' }
   },
 
   { path: '/perfil_tipo', name: 'perfil_tipo', component: () => import('../views/Secciones/PerfilTipo.vue') },
   { path: '/tallas',   name: 'tallas',   component: () => import('../views/Secciones/Tallas.vue') },
   { path: '/config',   name: 'config',   component: () => import('../views/Secciones/Config.vue') },
+
+  // ✅ NUEVO: Diseño
+  {
+    path: '/diseno',
+    name: 'diseno',
+    component: () => import('../views/Secciones/Diseno.vue'),
+    meta: { label: 'Diseño' }
+  },
 
   // Confirmación de email de Supabase (sign-up)
   {
