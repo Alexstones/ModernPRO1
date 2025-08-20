@@ -20,8 +20,8 @@ class MoldeController extends Controller
         $request->validate([
             'nombre'        => ['required','string','max:255'],
             // Se agregaron los tipos de archivo ttf y otf a todas las reglas de validación
-            'camiseta_izq'  => ['nullable','file','mimes:pdf,svg,png,jpg,jpeg,ai,eps,zip,ttf,otf','max:20480'],
-            'camiseta_der'  => ['nullable','file','mimes:pdf,svg,png,jpg,jpeg,ai,eps,zip,ttf,otf','max:20480'],
+            'camiseta_frente'  => ['nullable','file','mimes:pdf,svg,png,jpg,jpeg,ai,eps,zip,ttf,otf','max:20480'],
+            'camiseta_espalda'  => ['nullable','file','mimes:pdf,svg,png,jpg,jpeg,ai,eps,zip,ttf,otf','max:20480'],
             'short_izq'     => ['nullable','file','mimes:pdf,svg,png,jpg,jpeg,ai,eps,zip,ttf,otf','max:20480'],
             'short_der'     => ['nullable','file','mimes:pdf,svg,png,jpg,jpeg,ai,eps,zip,ttf,otf','max:20480'],
             'manga_izq'     => ['nullable','file','mimes:pdf,svg,png,jpg,jpeg,ai,eps,zip,ttf,otf','max:20480'],
@@ -31,7 +31,7 @@ class MoldeController extends Controller
         $dir = 'moldes/'.Str::slug($request->nombre).'-'.Str::random(6);
 
         $data = ['nombre' => $request->nombre];
-        foreach (['camiseta_izq','camiseta_der','short_izq','short_der','manga_izq','manga_der'] as $k) {
+        foreach (['camiseta_frente','camiseta_espalda','short_izq','short_der','manga_izq','manga_der'] as $k) {
             if ($request->file($k)) {
                 $data[$k] = $request->file($k)->store($dir, 'public');
             }
@@ -43,7 +43,7 @@ class MoldeController extends Controller
 
     public function destroy(Molde $molde)
     {
-        foreach (['camiseta_izq','camiseta_der','short_izq','short_der','manga_izq','manga_der'] as $k) {
+        foreach (['camiseta_frente','camiseta_espalda','short_izq','short_der','manga_izq','manga_der'] as $k) {
             if ($molde->$k) {
                 Storage::disk('public')->delete($molde->$k);
             }
@@ -59,8 +59,8 @@ class MoldeController extends Controller
         return [
             'id'           => $m->id,
             'nombre'       => $m->nombre,
-            'camiseta_izq' => $f($m->camiseta_izq),
-            'camiseta_der' => $f($m->camiseta_der),
+            'camiseta_feente' => $f($m->camiseta_izq),
+            'camiseta_espalda' => $f($m->camiseta_der),
             'short_izq'    => $f($m->short_izq),
             'short_der'    => $f($m->short_der),
             'manga_izq'    => $f($m->manga_izq),

@@ -84,8 +84,8 @@
                     <th rowspan="2" class="px-6 py-3">Acciones</th>
                   </tr>
                   <tr>
-                    <th class="px-6 py-3">Camiseta Izq</th>
-                    <th class="px-6 py-3">Camiseta Der</th>
+                    <th class="px-6 py-3">Camiseta frente</th>
+                    <th class="px-6 py-3">Camiseta espalda</th>
                     <th class="px-6 py-3">Short Izq</th>
                     <th class="px-6 py-3">Short Der</th>
                     <th class="px-6 py-3">Manga Izq</th>
@@ -103,11 +103,11 @@
                     <td class="px-6 py-4 font-semibold text-white">{{ item.nombre }}</td>
 
                     <td class="px-6 py-4">
-                      <a v-if="item.camiseta_izq" :href="item.camiseta_izq.url" target="_blank" class="product-link">Ver</a>
+                      <a v-if="item.camiseta_frente" :href="item.camiseta_frente.url" target="_blank" class="product-link">Ver</a>
                       <span v-else class="text-gray-500 italic">-</span>
                     </td>
                     <td class="px-6 py-4">
-                      <a v-if="item.camiseta_der" :href="item.camiseta_der.url" target="_blank" class="product-link">Ver</a>
+                      <a v-if="item.camiseta_espalda" :href="item.camiseta_espalda.url" target="_blank" class="product-link">Ver</a>
                       <span v-else class="text-gray-500 italic">-</span>
                     </td>
                     <td class="px-6 py-4">
@@ -150,8 +150,8 @@
 import { ref } from 'vue'
 
 const camposArchivo = [
-  { key: 'camiseta_izq', label: 'Molde Camiseta Izquierda' },
-  { key: 'camiseta_der', label: 'Molde Camiseta Derecha' },
+  { key: 'camiseta_frente', label: 'Molde Camiseta frente' },
+  { key: 'camiseta_espalda', label: 'Molde Camiseta espalda' },
   { key: 'short_izq', label: 'Molde Short Izquierda' },
   { key: 'short_der', label: 'Molde Short Derecha' },
   { key: 'manga_izq', label: 'Molde Manga Izquierda' },
@@ -194,8 +194,8 @@ const addMolde = () => {
 
   const nuevoMolde = {
     nombre: molde.value.nombre,
-    camiseta_izq: generarUrl(molde.value.archivos.camiseta_izq),
-    camiseta_der: generarUrl(molde.value.archivos.camiseta_der),
+    camiseta_frente: generarUrl(molde.value.archivos.camiseta_frente),
+    camiseta_espalda: generarUrl(molde.value.archivos.camiseta_espalda),
     short_izq: generarUrl(molde.value.archivos.short_izq),
     short_der: generarUrl(molde.value.archivos.short_der),
     manga_izq: generarUrl(molde.value.archivos.manga_izq),

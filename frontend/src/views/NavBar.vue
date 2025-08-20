@@ -1,6 +1,7 @@
 <template>
+  <!-- Desktop -->
   <v-app-bar
-    v-if="anchoPantalla() > 700"
+    v-if="isDesktop"
     height="100"
     scroll-behavior="hide"
     elevation="0"
@@ -13,12 +14,10 @@
 
       <v-divider vertical class="mx-4" />
 
-      <!-- NUEVO: Inicio -->
       <router-link to="/home" class="nav-link" aria-label="Ir a Inicio">
         <v-btn text class="nav-btn">Inicio</v-btn>
       </router-link>
 
-      <!-- Rutas en minúsculas para coincidir con el router -->
       <router-link to="/clientes" class="nav-link" aria-label="Ir a Clientes">
         <v-btn text class="nav-btn">Clientes</v-btn>
       </router-link>
@@ -35,6 +34,11 @@
         <v-btn text class="nav-btn">Moldes</v-btn>
       </router-link>
 
+      <!-- ✅ Moldería -->
+      <router-link to="/molderia" class="nav-link" aria-label="Ir a Moldería">
+        <v-btn text class="nav-btn">Moldería</v-btn>
+      </router-link>
+
       <router-link to="/perfil_tipo" class="nav-link" aria-label="Ir a Perfil tipografía">
         <v-btn text class="nav-btn">Perfil tipografía</v-btn>
       </router-link>
@@ -48,10 +52,35 @@
       </router-link>
     </v-card>
   </v-app-bar>
+
+  <!-- (Opcional) Mobile: puedes poner aquí un menú hamburguesa o nada -->
+  <v-app-bar
+    v-else
+    height="64"
+    elevation="0"
+    class="navbar-cool-gradient"
+  >
+    <v-card-title class="text-h6 text-white">MODELPRO</v-card-title>
+  </v-app-bar>
 </template>
 
 <script setup>
-const anchoPantalla = () => window.innerWidth
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+
+const width = ref(1024)
+const getWidth = () => (typeof window !== 'undefined' ? window.innerWidth : 1024)
+const handleResize = () => { width.value = getWidth() }
+
+onMounted(() => {
+  width.value = getWidth()
+  window.addEventListener('resize', handleResize, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
+const isDesktop = computed(() => width.value > 700)
 </script>
 
 <style scoped>
@@ -108,3 +137,4 @@ const anchoPantalla = () => window.innerWidth
   font-weight: 700;
 }
 </style>
+

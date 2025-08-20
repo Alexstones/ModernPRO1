@@ -18,6 +18,18 @@ const routes = [
   { path: '/generar',  name: 'generar',  component: () => import('../views/Secciones/GenerarPDF.vue') },
   { path: '/perfil',   name: 'perfilProducto', component: () => import('../views/Secciones/Perfil.vue') },
   { path: '/moldes',   name: 'moldes',   component: () => import('../views/Secciones/Moldes.vue') },
+
+  // ✅ NUEVO: Moldería
+  {
+    path: '/molderia',
+    name: 'molderia',
+    // Opción A: si tienes la vista creada:
+    component: () => import('../views/Secciones/Molderia.vue'),
+    // Opción B (alternativa): usar el componente que te compartí
+    // component: () => import('@/components/MolderiaDesign.vue'),
+    meta: { label: 'Moldería' }
+  },
+
   { path: '/perfil_tipo', name: 'perfil_tipo', component: () => import('../views/Secciones/PerfilTipo.vue') },
   { path: '/tallas',   name: 'tallas',   component: () => import('../views/Secciones/Tallas.vue') },
   { path: '/config',   name: 'config',   component: () => import('../views/Secciones/Config.vue') },
@@ -47,18 +59,12 @@ const router = createRouter({
 })
 
 /**
- * Fix para callbacks de Supabase cuando llegan como:
- *   http://localhost:5173/#access_token=...      (no empieza con "#/")
- *   http://localhost:5173/#type=recovery&...     (recuperación)
- * Con hash history, el router espera "#/ruta". Si no hay "/",
- * interpretamos esos parámetros y redirigimos a la vista adecuada
- * **preservando** los params como query (para que tus componentes puedan leerlos).
+ * Fix para callbacks de Supabase…
  */
 router.beforeEach((to, from, next) => {
-  // Evitar loop si ya estamos en las rutas objetivo
   if (to.name === 'Confirmacion' || to.name === 'resetPassword') return next()
 
-  const raw = window.location.hash || '' // e.g. "#access_token=..."
+  const raw = window.location.hash || ''
   if (raw && !raw.startsWith('#/')) {
     const params = new URLSearchParams(raw.slice(1))
     const access = params.get('access_token')
@@ -66,7 +72,6 @@ router.beforeEach((to, from, next) => {
 
     if (access || type) {
       const target = type === 'recovery' ? 'resetPassword' : 'Confirmacion'
-      // pasamos TODO el fragmento como query para no perder datos
       const query = Object.fromEntries(params.entries())
       return next({ name: target, query })
     }

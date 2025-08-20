@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\TallaController;
 
 // DEBUG: BORRAR LUEGO
 Route::get('/__routes_loaded', fn () => response()->json(['api_loaded' => true]));
+Route::post('/diag/excel', [PdfController::class, 'diagExcel']);
 
 
 Route::options('{any}', fn () => response()->noContent())->where('any', '.*');
