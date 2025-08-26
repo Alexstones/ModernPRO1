@@ -30,6 +30,7 @@
                 :rules="excelRules"
               />
 
+              <!-- PREVIEW DEL EXCEL -->
               <v-expand-transition>
                 <v-card v-if="previewData.headers.length" class="mt-4 preview-card" flat>
                   <v-card-title>
@@ -43,10 +44,134 @@
                       class="preview-table"
                       :items-per-page="5"
                     >
-                      <template #bottom></template> </v-data-table-virtual>
+                      <template #bottom></template>
+                    </v-data-table-virtual>
                   </v-card-text>
                 </v-card>
               </v-expand-transition>
+
+              <!-- MAPEO DE COLUMNAS -->
+              <v-card class="mt-6" variant="flat">
+                <v-card-title>
+                  <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
+                  Mapeo de columnas → placeholders
+                </v-card-title>
+                <v-card-text>
+                  <v-row>
+                    <v-col cols="12" sm="4">
+                      <v-select
+                        :items="headerValues"
+                        v-model="mapping.NOMBRE"
+                        label="Columna → {{NOMBRE}}"
+                        variant="outlined"
+                        density="comfortable"
+                        :disabled="!previewData.headers.length"
+                        :rules="[v => !!v || 'Requerido']"
+                      />
+                    </v-col>
+                    <v-col cols="12" sm="4">
+                      <v-select
+                        :items="headerValues"
+                        v-model="mapping.NUMERO"
+                        label="Columna → {{NUMERO}}"
+                        variant="outlined"
+                        density="comfortable"
+                        :disabled="!previewData.headers.length"
+                        :rules="[v => !!v || 'Requerido']"
+                      />
+                    </v-col>
+                    <v-col cols="12" sm="4">
+                      <v-select
+                        :items="headerValues"
+                        v-model="mapping.TALLE"
+                        label="Columna → {{TALLE}}"
+                        variant="outlined"
+                        density="comfortable"
+                        :disabled="!previewData.headers.length"
+                        :rules="[v => !!v || 'Requerido']"
+                      />
+                    </v-col>
+                  </v-row>
+
+                  <!-- PEQUEÑA PREVIEW POR FILA MAPEADA -->
+                  <v-data-table-virtual
+                    class="mt-4"
+                    :headers="[
+                      { title: 'Fila', value: '__i', sortable: false },
+                      { title: '{{NOMBRE}}', value: '__NOMBRE', sortable: false },
+                      { title: '{{NUMERO}}', value: '__NUMERO', sortable: false },
+                      { title: '{{TALLE}}',  value: '__TALLE',  sortable: false }
+                    ]"
+                    :items="mappedPreviewRows"
+                    hide-default-footer
+                  />
+                </v-card-text>
+              </v-card>
+
+              <!-- PERFILES DE IMPOSICIÓN -->
+              <v-card class="mt-6" variant="flat">
+                <v-card-title>
+                  <v-icon class="mr-2">mdi-view-grid</v-icon>
+                  Perfiles de imposición
+                </v-card-title>
+                <v-card-text>
+                  <v-row>
+                    <v-col cols="12" sm="4">
+                      <v-select
+                        :items="[
+                          { title: 'A4 1x1', value: 'A4_1x1' },
+                          { title: 'A4 2x2', value: 'A4_2x2' },
+                          { title: 'A4 2x3', value: 'A4_2x3' }
+                        ]"
+                        v-model="impose.profile"
+                        label="Perfil"
+                        variant="outlined"
+                        density="comfortable"
+                      />
+                    </v-col>
+                    <v-col cols="12" sm="4">
+                      <v-select
+                        :items="['A4', 'Letter']"
+                        v-model="impose.sheet"
+                        label="Hoja"
+                        variant="outlined"
+                        density="comfortable"
+                      />
+                    </v-col>
+                    <v-col cols="12" sm="4">
+                      <v-select
+                        :items="[
+                          { title: 'ZIP (varios PDFs)', value: 'zip' },
+                          { title: 'PDF único (imposición)', value: 'single' }
+                        ]"
+                        v-model="impose.mergeMode"
+                        label="Salida"
+                        variant="outlined"
+                        density="comfortable"
+                      />
+                    </v-col>
+                  </v-row>
+
+                  <v-row>
+                    <v-col cols="6" sm="3">
+                      <v-text-field v-model.number="impose.cols" label="Cols" type="number" variant="outlined" />
+                    </v-col>
+                    <v-col cols="6" sm="3">
+                      <v-text-field v-model.number="impose.rows" label="Rows" type="number" variant="outlined" />
+                    </v-col>
+                    <v-col cols="6" sm="3">
+                      <v-text-field v-model.number="impose.margin" label="Margen (mm)" type="number" variant="outlined" />
+                    </v-col>
+                    <v-col cols="6" sm="3">
+                      <v-text-field v-model.number="impose.bleed" label="Sangrado (mm)" type="number" variant="outlined" />
+                    </v-col>
+                  </v-row>
+
+                  <v-switch v-model="impose.cropMarks" color="primary" label="Marcas de corte" />
+                </v-card-text>
+              </v-card>
+
+              <v-divider class="my-6" />
 
               <v-row>
                 <v-col cols="12" sm="6">
@@ -105,26 +230,35 @@
 
               <v-divider class="my-4" />
 
+              <!-- Acciones -->
               <v-card-actions class="d-flex justify-space-between">
-                <v-btn
-                  color="secondary"
-                  variant="elevated"
-                  size="large"
-                  prepend-icon="mdi-refresh"
-                  @click="resetForm"
-                >
+                <v-btn color="secondary" variant="elevated" size="large" prepend-icon="mdi-refresh" @click="resetForm">
                   Restablecer
                 </v-btn>
-                <v-btn
-                  type="submit"
-                  color="primary"
-                  variant="elevated"
-                  size="large"
-                  prepend-icon="mdi-file-pdf-box"
-                  :loading="submitting"
-                >
-                  Generar PDF
-                </v-btn>
+
+                <div class="d-flex ga-3">
+                  <v-btn
+                    type="submit"
+                    color="primary"
+                    variant="elevated"
+                    size="large"
+                    prepend-icon="mdi-file-pdf-box"
+                    :loading="submitting"
+                  >
+                    Generar PDF (simple)
+                  </v-btn>
+
+                  <v-btn
+                    color="primary"
+                    variant="tonal"
+                    size="large"
+                    prepend-icon="mdi-package-variant-closed"
+                    :loading="submitting"
+                    @click="submitBatch"
+                  >
+                    Generar Lote
+                  </v-btn>
+                </div>
               </v-card-actions>
             </v-form>
           </v-card-text>
@@ -135,11 +269,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePdfSettingsStore } from '@/stores/pdfSettings';
 import axios from 'axios';
-import * as XLSX from 'xlsx'; // Importa la librería XLSX
+import * as XLSX from 'xlsx';
 
 const store = usePdfSettingsStore();
 const { fileName, jpegQuality, imageRes, colorImageRes, grayImageRes, compressPdf } = storeToRefs(store);
@@ -150,10 +284,23 @@ const formRef = ref(null);
 const submitting = ref(false);
 const excelFile = ref(null);
 
-// Nuevas variables para almacenar los datos de la vista previa
-const previewData = ref({
-  headers: [],
-  rows: [],
+// === Vista previa de Excel y filas completas ===
+const previewData = ref({ headers: [], rows: [] });
+const excelRowsFull = ref([]);
+
+// === Mapeo de columnas ===
+const mapping = ref({ NOMBRE: null, NUMERO: null, TALLE: null });
+
+// === Perfiles de imposición / salida ===
+const impose = ref({
+  mergeMode: 'zip',   // 'zip' | 'single'
+  profile: 'A4_2x2',
+  sheet: 'A4',
+  cols: 2,
+  rows: 2,
+  margin: 10,  // mm
+  bleed: 3,    // mm
+  cropMarks: true
 });
 
 const excelRules = [
@@ -179,20 +326,58 @@ const sanitizePdfName = (name) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-// Autocompleta nombre desde Excel y genera la vista previa
+// util: normaliza encabezados y los hace únicos
+function normalizeHeaders(arr) {
+  const out = [];
+  const seen = new Map();
+  arr.forEach((raw, i) => {
+    let h = String(raw ?? '').trim();
+    if (!h) h = `Col${i + 1}`;
+    let base = h;
+    let k = 1;
+    while (seen.has(h)) { h = `${base}_${++k}`; }
+    seen.set(h, true);
+    out.push(h);
+  });
+  return out;
+}
+
+// heurística: autocompleta mapeo
+function autoMapHeaders(headerTitles) {
+  const norm = (s) => (s || '').toLowerCase().trim();
+  const find = (alts) =>
+    headerTitles.find((h) => alts.some((a) => norm(h).includes(a))) || null;
+
+  mapping.value.NOMBRE = find(['nombre','name']);
+  mapping.value.NUMERO = find(['numero','número','number','dorsal']);
+  mapping.value.TALLE  = find(['talle','talla','size']);
+}
+
+const headerValues = computed(() => previewData.value.headers.map(h => h.value));
+
+const mappedPreviewRows = computed(() => {
+  return excelRowsFull.value.slice(0, 6).map((r, i) => ({
+    __i: i + 1,
+    __NOMBRE: mapping.value.NOMBRE ? r[mapping.value.NOMBRE] : '',
+    __NUMERO: mapping.value.NUMERO ? r[mapping.value.NUMERO] : '',
+    __TALLE:  mapping.value.TALLE  ? r[mapping.value.TALLE]  : '',
+  }));
+});
+
+// Lee Excel y genera preview + autocompleta nombre + mapeo
 watch(excelFile, (val) => {
   const file = getFirstFile(val);
   if (!file || !file.name) {
-    fileName.value = ''; // Limpia el nombre si no hay archivo
-    previewData.value = { headers: [], rows: [] }; // Limpia la vista previa
+    fileName.value = '';
+    previewData.value = { headers: [], rows: [] };
+    excelRowsFull.value = [];
+    mapping.value = { NOMBRE: null, NUMERO: null, TALLE: null };
     return;
   }
-  
-  const base = sanitizePdfName(file.name);
-  if (!base) return;
-  if (!fileName.value || fileName.value === '') fileName.value = base;
 
-  // Lógica para leer y generar la vista previa
+  const base = sanitizePdfName(file.name);
+  if (base && (!fileName.value || fileName.value === '')) fileName.value = base;
+
   const reader = new FileReader();
   reader.onload = (e) => {
     const data = new Uint8Array(e.target.result);
@@ -202,19 +387,21 @@ watch(excelFile, (val) => {
     const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
     if (json.length > 0) {
-      const headers = json[0].map(h => ({ title: h, value: h, sortable: false }));
+      const headerTitles = normalizeHeaders(json[0]);
+      const headers = headerTitles.map(h => ({ title: h, value: h, sortable: false }));
       const rows = json.slice(1).map(row => {
         const item = {};
-        headers.forEach((header, index) => {
-          item[header.value] = row[index];
-        });
+        headerTitles.forEach((h, index) => { item[h] = row[index]; });
         return item;
       });
 
+      excelRowsFull.value = rows;
       previewData.value.headers = headers;
-      // Muestra solo las primeras 10 filas para no sobrecargar el navegador
       previewData.value.rows = rows.slice(0, 10);
+
+      autoMapHeaders(headerTitles);
     } else {
+      excelRowsFull.value = [];
       previewData.value = { headers: [], rows: [] };
     }
   };
@@ -222,7 +409,6 @@ watch(excelFile, (val) => {
 }, { immediate: false });
 
 async function parseAxiosBlobError(error) {
-  // ... (el resto de tu función, no necesita cambios)
   try {
     if (error?.response?.data instanceof Blob) {
       const text = await error.response.data.text();
@@ -239,7 +425,6 @@ async function parseAxiosBlobError(error) {
 }
 
 const submitPdfSettings = async () => {
-  // ... (el resto de tu función, no necesita cambios)
   submitting.value = true;
   try {
     const formData = new FormData();
@@ -254,16 +439,11 @@ const submitPdfSettings = async () => {
     formData.append('compressPdf', compressPdf.value ? '1' : '0');
 
     const file = getFirstFile(excelFile.value);
-    if (!file) {
-      alert('Debes subir un archivo Excel.');
-      submitting.value = false;
-      return;
-    }
+    if (!file) { alert('Debes subir un archivo Excel.'); submitting.value = false; return; }
     formData.append('excelFile', file);
-    formData.append('download', '1'); // descarga directa
+    formData.append('download', '1');
 
     const apiUrl = 'http://127.0.0.1:8000/api/generate-pdf';
-
     const response = await axios.post(apiUrl, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       responseType: 'blob',
@@ -271,11 +451,8 @@ const submitPdfSettings = async () => {
 
     const blob = new Blob([response.data], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = finalPdfName;
-    document.body.appendChild(a);
-    a.click(); a.remove();
-    window.URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = url; a.download = finalPdfName;
+    document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);
 
     alert(`✅ PDF "${finalPdfName}" generado y descargado.`);
   } catch (error) {
@@ -307,6 +484,55 @@ const submitPdfSettings = async () => {
   }
 };
 
+const submitBatch = async () => {
+  const result = await formRef.value?.validate();
+  if (!result?.valid) { alert('Corrige los campos requeridos.'); return; }
+  if (!mapping.value.NOMBRE || !mapping.value.NUMERO || !mapping.value.TALLE) {
+    alert('Completa el mapeo de columnas.'); return;
+  }
+
+  submitting.value = true;
+  try {
+    const formData = new FormData();
+    const safeBase = sanitizePdfName(fileName.value ?? 'documento');
+    const finalBase = safeBase.replace(/\.pdf$/i, '');
+    const finalZip  = `${finalBase}.zip`;
+
+    const file = getFirstFile(excelFile.value); if (!file) throw new Error('Falta Excel');
+
+    formData.append('fileName', finalBase);
+    formData.append('excelFile', file);
+    formData.append('mapping', JSON.stringify(mapping.value));
+    formData.append('imposition', JSON.stringify(impose.value));
+    formData.append('jpegQuality', String(jpegQuality.value ?? ''));
+    formData.append('imageRes', String(imageRes.value ?? ''));
+    formData.append('colorImageRes', String(colorImageRes.value ?? ''));
+    formData.append('grayImageRes', String(grayImageRes.value ?? ''));
+    formData.append('compressPdf', compressPdf.value ? '1' : '0');
+    formData.append('download', '1');
+
+    const apiUrl = 'http://127.0.0.1:8000/api/generate-pdf-batch';
+    const response = await axios.post(apiUrl, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      responseType: 'blob',
+    });
+
+    const ctype = response.headers['content-type'] || '';
+    const ext = ctype.includes('zip') ? 'zip' : 'pdf';
+    const fname = ext === 'zip' ? finalZip : `${finalBase}.pdf`;
+
+    const blob = new Blob([response.data], { type: ctype });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+
+    alert(`✅ Archivo "${fname}" generado.`);
+  } catch (e) {
+    const parsed = await parseAxiosBlobError(e);
+    alert('❌ ' + (parsed || e?.message || 'Error desconocido.'));
+  } finally { submitting.value = false; }
+};
+
 const handleFormSubmit = async () => {
   const result = await formRef.value?.validate();
   if (result?.valid) await submitPdfSettings();
@@ -316,21 +542,26 @@ const handleFormSubmit = async () => {
 const resetForm = () => {
   store.reset();
   excelFile.value = null;
-  // Limpia la vista previa al restablecer el formulario
   previewData.value = { headers: [], rows: [] };
+  excelRowsFull.value = [];
+  mapping.value = { NOMBRE: null, NUMERO: null, TALLE: null };
   formRef.value?.resetValidation?.();
   alert('Formulario de configuración restablecido.');
 };
 </script>
 
 <style scoped>
-/* Agrega estos estilos a tu sección <style scoped> */
-.preview-card {
-  border-left: 5px solid #4CAF50; /* Un color que combine con el diseño */
-  transition: all 0.3s ease-in-out;
+.preview-card { border-left: 5px solid #4CAF50; transition: all .3s; }
+.preview-table { background-color: #f9f9f9; border-radius: 8px; }
+
+/* opcional: estiliza las cards */
+.pdf-settings-title-colorful {
+  background: linear-gradient(90deg, #FF7A18, #AF002D 70%);
+  color: white;
+  border-top-left-radius: 12px; border-top-right-radius: 12px;
 }
-.preview-table {
-  background-color: #f9f9f9;
-  border-radius: 8px;
+.pdf-settings-card-colorful {
+  border-radius: 12px;
+  overflow: hidden;
 }
 </style>

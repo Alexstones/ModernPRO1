@@ -3,7 +3,6 @@
   <v-app-bar
     v-if="isDesktop"
     height="100"
-    scroll-behavior="hide"
     elevation="0"
     class="navbar-cool-gradient"
   >
@@ -25,6 +24,11 @@
 
       <router-link to="/generar" class="nav-link" aria-label="Ir a Generador PDF">
         <v-btn text class="nav-btn">Generador PDF</v-btn>
+      </router-link>
+
+      <!-- ✅ Nuevo: Historial -->
+      <router-link to="/historial" class="nav-link" aria-label="Ir a Historial">
+        <v-btn text class="nav-btn">Historial</v-btn>
       </router-link>
 
       <router-link to="/perfil" class="nav-link" aria-label="Ir a Perfil Producto PDF">
@@ -52,14 +56,14 @@
         <v-btn text class="nav-btn">Config</v-btn>
       </router-link>
 
-      <!-- ✅ Nueva pestaña Diseño -->
+      <!-- ✅ Diseño -->
       <router-link to="/diseno" class="nav-link" aria-label="Ir a Diseño">
         <v-btn text class="nav-btn">Diseño</v-btn>
       </router-link>
     </v-card>
   </v-app-bar>
 
-  <!-- Mobile -->
+  <!-- Mobile (header compacto) -->
   <v-app-bar
     v-else
     height="64"
@@ -134,7 +138,7 @@ const isDesktop = computed(() => width.value > 700)
   box-shadow: 0 8px 20px rgba(0,0,0,.2);
 }
 
-/* Botón activo (router-link-active) */
+/* Activo (router-link-active) */
 .router-link-active .nav-btn {
   background: linear-gradient(45deg, #79c2ff, #4784ff) !important;
   color: #fff !important;
@@ -143,3 +147,4 @@ const isDesktop = computed(() => width.value > 700)
   font-weight: 700;
 }
 </style>
+

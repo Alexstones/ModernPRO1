@@ -39,6 +39,14 @@ const routes = [
     meta: { label: 'Diseño' }
   },
 
+  // ✅ NUEVO: Historial de lotes
+  {
+    path: '/historial',
+    name: 'historial',
+    component: () => import('../components/BatchHistory.vue'),
+    meta: { label: 'Historial' }
+  },
+
   // Confirmación de email de Supabase (sign-up)
   {
     path: '/confirmacion',
