@@ -34,6 +34,9 @@ Route::options('{any}', fn () => response()->noContent())->where('any', '.*');
 Route::post('/diag/excel', [PdfController::class, 'diagExcel']);
 Route::post('/generate-pdf', [PdfController::class, 'generate']);
 
+/* === NUEVO: alias para la ruta que usa el front === */
+Route::post('/generate-pdf-batch', [PdfController::class, 'generateBatch']); // <-- agregado
+
 /**
  * ----------------------
  * Auth & Productos
@@ -92,13 +95,13 @@ Route::get('/molderia/{molderia}',      [MolderiaController::class, 'show']);
  * Diseño (paleta, presets y PDF)
  * ===============================
  */
-Route::get('/diseno/paleta',            [DisenoController::class, 'getPalette']);
-Route::post('/diseno/paleta',           [DisenoController::class, 'savePalette']);
-Route::get('/diseno/presets',           [DisenoController::class, 'indexPresets']);
-Route::post('/diseno/presets',          [DisenoController::class, 'storePreset']);
-Route::put('/diseno/presets/{preset}',  [DisenoController::class, 'updatePreset']);
+Route::get('/diseno/paleta',              [DisenoController::class, 'getPalette']);
+Route::post('/diseno/paleta',             [DisenoController::class, 'savePalette']);
+Route::get('/diseno/presets',             [DisenoController::class, 'indexPresets']);
+Route::post('/diseno/presets',            [DisenoController::class, 'storePreset']);
+Route::put('/diseno/presets/{preset}',    [DisenoController::class, 'updatePreset']);
 Route::delete('/diseno/presets/{preset}', [DisenoController::class, 'destroyPreset']);
-Route::post('/diseno/pdf',              [DisenoController::class, 'exportPdf'])->name('diseno.pdf');
+Route::post('/diseno/pdf',                [DisenoController::class, 'exportPdf'])->name('diseno.pdf');
 
 /**
  * ===============================
@@ -106,3 +109,12 @@ Route::post('/diseno/pdf',              [DisenoController::class, 'exportPdf'])-
  * ===============================
  */
 Route::post('/print/generate-batch', [PdfController::class, 'generateBatch']);
+
+/**
+ * ===============================
+ * NEW: Subir y generar Moldería (Diseño)
+ * ===============================
+ * Front: POST /api/diseno/molderia/upload  (JSON) -> { url, filename }
+ */
+Route::post('/diseno/molderia/upload', [DisenoController::class, 'molderiaUpload'])
+     ->name('diseno.molderia.upload');

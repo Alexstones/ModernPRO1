@@ -157,6 +157,10 @@ class PdfController extends Controller
             ])->render();
 
             $pdf = Pdf::loadHTML($html)->setPaper('a4', 'portrait');
+
+            /* === NUEVO: generar bytes una vez y enviar Content-Length para progreso exacto === */
+            $bytes = $pdf->output(); // <- generamos aquí
+            $len   = strlen($bytes);
         } catch (\Throwable $e) {
             Log::error('[PDF] Error generando PDF', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'No se pudo generar el PDF.', 'detail' => $e->getMessage()], 500);
@@ -164,11 +168,12 @@ class PdfController extends Controller
 
         $pdfName = preg_replace('/[<>:"\/\\\\|?*\x00-\x1F]+/','',preg_replace('/\.pdf$/i','',$validated['fileName'])) . '.pdf';
         if ($request->boolean('download')) {
-            return response()->streamDownload(fn()=>print($pdf->output()), $pdfName, [
-                'Content-Type'=>'application/pdf',
-                'Content-Disposition'=>'attachment; filename="'.$pdfName.'"',
-                'Cache-Control'=>'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma'=>'no-cache',
+            return response()->streamDownload(function () use ($bytes) { echo $bytes; }, $pdfName, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="'.$pdfName.'"',
+                'Content-Length'      => $len,                  // <-- NUEVO
+                'Cache-Control'       => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma'              => 'no-cache',
             ]);
         }
 
@@ -236,6 +241,9 @@ class PdfController extends Controller
 
         /* ============ Modo ZIP: 1 PDF por ítem, agrupado opcionalmente ============ */
         if ($mergeMode === 'zip') {
+            // === NUEVO: respetar cancelación del cliente en trabajos largos
+            @ignore_user_abort(false);
+
             $zipPath = storage_path('app/tmp_'.Str::uuid().'.zip');
             $zip = new ZipArchive();
             if ($zip->open($zipPath, ZipArchive::CREATE)!==true) {
@@ -243,6 +251,15 @@ class PdfController extends Controller
             }
 
             foreach ($items as $i=>$item) {
+                // Si el cliente canceló (AbortController en el front), cortamos el trabajo
+                if (function_exists('connection_aborted') && connection_aborted()) {
+                    Log::warning('[BATCH] Cliente canceló la conexión, abortando creación de ZIP.');
+                    $zip->close();
+                    @unlink($zipPath);
+                    // 499 = Client Closed Request (no estándar, útil para log)
+                    return response()->noContent(499);
+                }
+
                 $name = $this->formatName($tpl, $item, $i+1);
 
                 $html = view('pdf.print_item', [
@@ -264,7 +281,7 @@ class PdfController extends Controller
                 }
 
                 $dir = '';
-                if ($groupBy === 'TALLE')      $dir = trim((string)$item['TALLE']);
+                if ($groupBy === 'TALLE')         $dir = trim((string)$item['TALLE']);
                 elseif ($groupBy === 'CATEGORIA') $dir = trim((string)$item['CATEGORIA']);
                 $filename = ($dir ? ($dir.'/') : '') . $name . '.pdf';
 
@@ -273,7 +290,14 @@ class PdfController extends Controller
             $zip->close();
 
             $zipName = preg_replace('/[<>:"\/\\\\|?*\x00-\x1F]+/','',preg_replace('/\.zip$/i','',$validated['fileName'])) . '.zip';
-            return response()->download($zipPath, $zipName, ['Content-Type'=>'application/zip'])
+
+            // BinaryFileResponse ya envía Content-Length, pero lo agregamos explícito.
+            $headers = [
+                'Content-Type'   => 'application/zip',
+                'Content-Length' => (string) @filesize($zipPath),   // <-- NUEVO
+            ];
+
+            return response()->download($zipPath, $zipName, $headers)
                              ->deleteFileAfterSend(true);
         }
 
@@ -301,8 +325,12 @@ class PdfController extends Controller
 
         if ($request->boolean('download', true)) {
             $name = preg_replace('/[<>:"\/\\\\|?*\x00-\x1F]+/','',preg_replace('/\.pdf$/i','',$validated['fileName'])) . '.pdf';
+            /* === NUEVO: Content-Length para progreso exacto === */
+            $len  = strlen($bytes);
+
             return response()->streamDownload(function () use ($bytes) { echo $bytes; }, $name, [
-                'Content-Type'=>'application/pdf'
+                'Content-Type'   => 'application/pdf',
+                'Content-Length' => $len,  // <-- NUEVO
             ]);
         }
         return response()->json(['message'=>'PDF listo','bytes'=>strlen($bytes)]);
