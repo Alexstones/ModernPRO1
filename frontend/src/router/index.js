@@ -10,8 +10,18 @@ const routes = [
     meta: { label: 'Inicio' }
   },
 
-  // Raíz redirige a /home
+  // Raíz y cadena vacía redirigen a /home
   { path: '/', redirect: { name: 'home' } },
+  { path: '', redirect: { name: 'home' } },
+
+  // ✅ NUEVO: Planes (con alias para tolerar /Planes)
+  {
+    path: '/planes',
+    alias: ['/Planes'],
+    name: 'planes',
+    component: () => import('../views/Secciones/Planes.vue'),
+    meta: { label: 'Planes' }
+  },
 
   // Secciones
   { path: '/clientes', name: 'clientes', component: () => import('../views/Secciones/Clientes.vue') },
@@ -37,14 +47,6 @@ const routes = [
     name: 'diseno',
     component: () => import('../views/Secciones/Diseno.vue'),
     meta: { label: 'Diseño' }
-  },
-
-  // ✅ NUEVO: Historial de lotes
-  {
-    path: '/historial',
-    name: 'historial',
-    component: () => import('../components/BatchHistory.vue'),
-    meta: { label: 'Historial' }
   },
 
   // Confirmación de email de Supabase (sign-up)

@@ -6,9 +6,12 @@ import NavBar from "./views/NavBar.vue";
 <template>
   <v-app>
     <div class="page-container">
+      <!-- barra -->
       <NavBar />
-      <div class="content-wrapper mt-16">
-        <div class="router-view-card mt-4">
+
+      <!-- contenido -->
+      <div class="content-wrapper">
+        <div class="router-view-card">
           <RouterView />
         </div>
       </div>
@@ -21,14 +24,17 @@ import NavBar from "./views/NavBar.vue";
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #008DCE; /* Fondo azul como en tu imagen */
+  background-color: #008DCE; /* fondo */
 }
 
+/* Empuje top para que no se solape con el app-bar alto de escritorio */
 .content-wrapper {
   flex: 1;
   display: flex;
   justify-content: center;
   padding: 32px 16px;
+  /* si tu app-bar es alto en desktop, deja un respiro adicional */
+  margin-top: 84px; /* equivalente aprox. a tu app-bar/espaciado */
 }
 
 .router-view-card {

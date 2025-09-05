@@ -18,17 +18,23 @@
         <v-btn text class="nav-btn">Inicio</v-btn>
       </router-link>
 
-      <router-link to="/clientes" class="nav-link" aria-label="Ir a Clientes">
+      <!-- 👉 Nuevo: Planes (enseguida de Inicio) -->
+      <router-link to="/Planes" class="nav-link" aria-label="Ir a Planes y Pagos">
+        <v-btn text class="nav-btn">Planes</v-btn>
+      </router-link>
+
+      <!-- Solo admins (opcional). Quita v-if si quieres que se vea siempre -->
+      <router-link
+        v-if="isAdmin"
+        to="/clientes"
+        class="nav-link"
+        aria-label="Ir a Clientes"
+      >
         <v-btn text class="nav-btn">Clientes</v-btn>
       </router-link>
 
       <router-link to="/generar" class="nav-link" aria-label="Ir a Generador PDF">
         <v-btn text class="nav-btn">Generador PDF</v-btn>
-      </router-link>
-
-      <!-- ✅ Nuevo: Historial -->
-      <router-link to="/historial" class="nav-link" aria-label="Ir a Historial">
-        <v-btn text class="nav-btn">Historial</v-btn>
       </router-link>
 
       <router-link to="/perfil" class="nav-link" aria-label="Ir a Perfil Producto PDF">
@@ -37,11 +43,6 @@
 
       <router-link to="/moldes" class="nav-link" aria-label="Ir a Moldes">
         <v-btn text class="nav-btn">Moldes</v-btn>
-      </router-link>
-
-      <!-- ✅ Moldería -->
-      <router-link to="/molderia" class="nav-link" aria-label="Ir a Moldería">
-        <v-btn text class="nav-btn">Moldería</v-btn>
       </router-link>
 
       <router-link to="/perfil_tipo" class="nav-link" aria-label="Ir a Perfil tipografía">
@@ -54,11 +55,6 @@
 
       <router-link to="/config" class="nav-link" aria-label="Ir a Configuración">
         <v-btn text class="nav-btn">Config</v-btn>
-      </router-link>
-
-      <!-- ✅ Diseño -->
-      <router-link to="/diseno" class="nav-link" aria-label="Ir a Diseño">
-        <v-btn text class="nav-btn">Diseño</v-btn>
       </router-link>
     </v-card>
   </v-app-bar>
@@ -74,8 +70,16 @@
   </v-app-bar>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+
+/**
+ * Prop opcional para mostrar el botón "Clientes" solo a admins.
+ * Usa así: <Navbar :is-admin="auth.isAdmin" />
+ * Si quieres que siempre se vea, elimina la prop y el v-if del template.
+ */
+const props = defineProps<{ isAdmin?: boolean }>()
+const isAdmin = props.isAdmin ?? false
 
 const width = ref(1024)
 const getWidth = () => (typeof window !== 'undefined' ? window.innerWidth : 1024)
